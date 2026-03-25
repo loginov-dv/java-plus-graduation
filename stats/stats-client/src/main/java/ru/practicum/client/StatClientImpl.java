@@ -1,10 +1,17 @@
 package ru.practicum.client;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.retry.backoff.FixedBackOffPolicy;
+import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.StatsParamDto;
 import ru.practicum.dto.ViewStatsDto;
@@ -17,21 +24,34 @@ import java.util.List;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class StatClientImpl implements StatClient {
-    private final RestClient restClient;
+    private final DiscoveryClient discoveryClient;
+    private final String statsServerId;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatClientImpl(String statUrl) {
-        log.info("Stat-client использует url: {}", statUrl);
-        restClient = RestClient.builder()
-                .baseUrl(statUrl)
+    private RestClient createRestClient() {
+        RetryTemplate retryTemplate = new RetryTemplate();
+        FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
+        fixedBackOffPolicy.setBackOffPeriod(10000L);
+        retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
+        MaxAttemptsRetryPolicy retryPolicy = new MaxAttemptsRetryPolicy();
+        retryPolicy.setMaxAttempts(5);
+        retryTemplate.setRetryPolicy(retryPolicy);
+
+        ServiceInstance instance = retryTemplate.execute(cxt -> getInstance());
+        String baseUrl = "http://" + instance.getHost() + ":" + instance.getPort();
+        log.info("Stat-client использует url: {}", baseUrl);
+
+        return RestClient.builder()
+                .baseUrl(baseUrl)
                 .build();
     }
 
     @Override
     public void hit(EndpointHitDto endpointHitDto) {
         try {
-            restClient.post()
+            createRestClient().post()
                     .uri("/hit")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(endpointHitDto)
@@ -49,7 +69,7 @@ public class StatClientImpl implements StatClient {
         log.debug("statsParamDto: {}", statsParamDto);
 
         try {
-            List<ViewStatsDto> stats = restClient.get()
+            List<ViewStatsDto> stats = createRestClient().get()
                     .uri(uriBuilder -> {
                         String startEncoded = URLEncoder.encode(
                                 statsParamDto.getStart().format(formatter),
@@ -89,5 +109,15 @@ public class StatClientImpl implements StatClient {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    private ServiceInstance getInstance() {
+        List<ServiceInstance> instances = discoveryClient.getInstances(statsServerId);
+
+        if (instances.isEmpty()) {
+            throw new RuntimeException("Не найден сервис статистики с id: " + statsServerId);
+        }
+
+        return instances.getFirst();
     }
 }
