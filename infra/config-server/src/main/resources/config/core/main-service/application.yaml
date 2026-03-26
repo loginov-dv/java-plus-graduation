@@ -15,7 +15,11 @@ spring:
       format_sql: true
   sql.init.mode: always
 
-stats-server.id: 'stats-server'
+# Stats-server custom properties
+stats-server:
+  id: 'stats-server'
+  retryBackOffPeriod: 10000
+  retryMaxAttempts: 5
 
 logging:
   level:
