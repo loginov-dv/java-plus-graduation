@@ -28,3 +28,9 @@ logging:
   level:
     root: INFO
     ru.practicum.infra.config: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
