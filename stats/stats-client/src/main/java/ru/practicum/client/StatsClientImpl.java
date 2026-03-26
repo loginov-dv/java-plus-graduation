@@ -6,8 +6,6 @@ import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -15,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.StatsParamDto;
 import ru.practicum.dto.ViewStatsDto;
+import ru.practicum.exception.StatsServerNotFoundException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -25,23 +24,16 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class StatClientImpl implements StatClient {
+public class StatsClientImpl implements StatsClient {
     private final DiscoveryClient discoveryClient;
+    private final RetryTemplate retryTemplate;
     private final String statsServerId;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private RestClient createRestClient() {
-        RetryTemplate retryTemplate = new RetryTemplate();
-        FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
-        fixedBackOffPolicy.setBackOffPeriod(10000L);
-        retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
-        MaxAttemptsRetryPolicy retryPolicy = new MaxAttemptsRetryPolicy();
-        retryPolicy.setMaxAttempts(5);
-        retryTemplate.setRetryPolicy(retryPolicy);
-
         ServiceInstance instance = retryTemplate.execute(cxt -> getInstance());
         String baseUrl = "http://" + instance.getHost() + ":" + instance.getPort();
-        log.info("Stat-client использует url: {}", baseUrl);
+        log.info("Stat-client использует stats-server по следующему url: {}", baseUrl);
 
         return RestClient.builder()
                 .baseUrl(baseUrl)
@@ -115,7 +107,7 @@ public class StatClientImpl implements StatClient {
         List<ServiceInstance> instances = discoveryClient.getInstances(statsServerId);
 
         if (instances.isEmpty()) {
-            throw new RuntimeException("Не найден сервис статистики с id: " + statsServerId);
+            throw new StatsServerNotFoundException("Не найден сервис статистики с id: " + statsServerId);
         }
 
         return instances.getFirst();

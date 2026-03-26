@@ -4,9 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.client.StatClient;
+import ru.practicum.client.StatsClient;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.ewm.dto.event.*;
 import ru.practicum.ewm.service.RequestService;
@@ -21,11 +22,12 @@ import java.util.List;
 @RestController
 public class EventController {
     private final EventService eventService;
-    private final StatClient statClient;
+    @Lazy
+    private final StatsClient statsClient;
     private final RequestService requestService;
 
     private void saveHit(HttpServletRequest request) {
-        statClient.hit(new EndpointHitDto(
+        statsClient.hit(new EndpointHitDto(
                 "ewm-service",
                 request.getRequestURI(),
                 request.getRemoteAddr(),

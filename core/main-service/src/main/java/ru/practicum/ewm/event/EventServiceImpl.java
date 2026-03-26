@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import ru.practicum.client.StatClient;
+import ru.practicum.client.StatsClient;
 import ru.practicum.dto.StatsParamDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.ewm.dto.event.*;
@@ -44,7 +44,7 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
     @Lazy
-    private final StatClient statClient;
+    private final StatsClient statsClient;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
     private final CommentRepository commentRepository;
@@ -66,7 +66,7 @@ public class EventServiceImpl implements EventService {
         statsParamDto.setIsUnique(true);
 
         try {
-            List<ViewStatsDto> viewStatsDtoList = statClient.getStats(statsParamDto);
+            List<ViewStatsDto> viewStatsDtoList = statsClient.getStats(statsParamDto);
             return viewStatsDtoList.stream()
                     .collect(Collectors.toMap(
                             dto -> Long.parseLong(dto.getUri().substring(dto.getUri().lastIndexOf('/') + 1)),

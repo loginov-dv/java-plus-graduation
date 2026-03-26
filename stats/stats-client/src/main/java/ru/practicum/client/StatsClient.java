@@ -6,7 +6,7 @@ import ru.practicum.dto.ViewStatsDto;
 
 import java.util.List;
 
-public interface StatClient {
+public interface StatsClient {
 
     void hit(EndpointHitDto endpointHitDto);
 
