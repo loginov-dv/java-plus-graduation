@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driverClassName: 'org.h2.Driver'
-    url: 'jdbc:h2:mem:ewm'
+    url: 'jdbc:h2:mem:events_db'
     username: 'ewmuser'
     password: 'ewmpass'
   jpa:
@@ -30,4 +30,4 @@ logging:
         JpaTransactionManager: DEBUG
       transaction:
         interceptor: DEBUG
-    ru.practicum.ewm: DEBUG
+    ru.practicum.core.event: DEBUG

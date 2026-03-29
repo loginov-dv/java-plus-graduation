@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driverClassName: 'org.postgresql.Driver'
-    url: 'jdbc:postgresql://localhost:5433/ewm'
+    url: 'jdbc:postgresql://localhost:5433/events_db'
     username: 'ewmuser'
     password: 'ewmpass'
   jpa:
@@ -24,4 +24,4 @@ stats-server:
 logging:
   level:
     root: INFO
-    ru.practicum.ewm: DEBUG
+    ru.practicum.core.event: DEBUG
