@@ -1,4 +1,4 @@
-package ru.practicum.ewm.model.user;
+package ru.practicum.core.user.model;
 
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;

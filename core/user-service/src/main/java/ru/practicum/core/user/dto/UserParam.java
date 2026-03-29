@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.user;
+package ru.practicum.core.user.dto;
 
 import java.util.List;
 

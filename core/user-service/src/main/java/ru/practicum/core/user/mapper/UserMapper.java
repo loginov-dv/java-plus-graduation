@@ -1,10 +1,12 @@
-package ru.practicum.ewm.mapper;
+package ru.practicum.core.user.mapper;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import ru.practicum.ewm.dto.user.NewUserRequest;
-import ru.practicum.ewm.dto.user.UserDto;
-import ru.practicum.ewm.model.user.User;
+
+import ru.practicum.core.common.dto.user.NewUserRequest;
+import ru.practicum.core.common.dto.user.UserDto;
+import ru.practicum.core.common.dto.user.UserShortDto;
+import ru.practicum.core.user.model.User;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class UserMapper {
@@ -25,5 +27,14 @@ public final class UserMapper {
         userDto.setEmail(user.getEmail());
 
         return userDto;
+    }
+
+    public static UserShortDto toUserShortDto(User user) {
+        UserShortDto userShortDto = new UserShortDto();
+
+        userShortDto.setId(user.getId());
+        userShortDto.setName(user.getName());
+
+        return userShortDto;
     }
 }

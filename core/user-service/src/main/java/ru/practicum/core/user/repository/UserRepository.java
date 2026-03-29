@@ -1,7 +1,8 @@
-package ru.practicum.ewm.repository;
+package ru.practicum.core.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import ru.practicum.ewm.model.user.User;
+
+import ru.practicum.core.user.model.User;
 
 import java.util.Collection;
 import java.util.List;
