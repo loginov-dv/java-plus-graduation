@@ -1,9 +1,10 @@
-package ru.practicum.ewm.mapper;
+package ru.practicum.core.request.mapper;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import ru.practicum.ewm.dto.event.ParticipationRequestDto;
-import ru.practicum.ewm.model.request.Request;
+
+import ru.practicum.core.common.dto.request.ParticipationRequestDto;
+import ru.practicum.core.request.model.Request;
 
 import java.time.format.DateTimeFormatter;
 
@@ -15,8 +16,8 @@ public final class RequestMapper {
         ParticipationRequestDto dto = new ParticipationRequestDto();
         dto.setId(request.getId());
         dto.setCreated(request.getCreated().format(FORMATTER));
-        dto.setEvent(request.getEvent().getId());
-        dto.setRequester(request.getRequester().getId());
+        dto.setEvent(request.getEvent());
+        dto.setRequester(request.getRequester());
         dto.setStatus(request.getStatus().name());
         return dto;
     }

@@ -1,12 +1,10 @@
-package ru.practicum.ewm.model.request;
+package ru.practicum.core.request.model;
 
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import ru.practicum.ewm.model.event.Event;
-import ru.practicum.ewm.model.user.User;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode
+@EqualsAndHashCode // TODO: убрать
 public class Request {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,15 +22,11 @@ public class Request {
     @Column(name = "created", nullable = false)
     private LocalDateTime created = LocalDateTime.now();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
-    @ToString.Exclude
-    private Event event;
+    @Column(name = "event_id")
+    private Long event;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requester_id", nullable = false)
-    @ToString.Exclude
-    private User requester;
+    @Column(name = "requester_id")
+    private Long requester;
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)

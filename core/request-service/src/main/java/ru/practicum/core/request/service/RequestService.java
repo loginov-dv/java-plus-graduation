@@ -1,10 +1,11 @@
-package ru.practicum.ewm.service;
+package ru.practicum.core.request.service;
 
-import ru.practicum.ewm.dto.event.EventRequestStatusUpdateRequest;
-import ru.practicum.ewm.dto.event.EventRequestStatusUpdateResult;
-import ru.practicum.ewm.dto.event.ParticipationRequestDto;
+import ru.practicum.core.common.dto.request.EventRequestStatusUpdateRequest;
+import ru.practicum.core.common.dto.request.EventRequestStatusUpdateResult;
+import ru.practicum.core.common.dto.request.ParticipationRequestDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RequestService {
 
@@ -18,4 +19,8 @@ public interface RequestService {
 
     EventRequestStatusUpdateResult changeRequestStatus(Long userId, Long eventId,
                                                        EventRequestStatusUpdateRequest request);
+
+    Map<Long, Long> countConfirmedRequestsForEvents(List<Long> eventIds);
+
+    List<ParticipationRequestDto> getByEventAndRequester(Long eventId, Long requesterId);
 }

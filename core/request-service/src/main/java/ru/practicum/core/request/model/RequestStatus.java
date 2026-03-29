@@ -1,4 +1,4 @@
-package ru.practicum.ewm.model.request;
+package ru.practicum.core.request.model;
 
 import java.util.Optional;
 
