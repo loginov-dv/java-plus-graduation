@@ -5,15 +5,11 @@ eureka:
   instance:
     preferIpAddress: true
     hostname: ${spring.application.name:localhost}
-#    nonSecurePort: ${server.port}
-#    nonSecurePortEnabled: true
-#    lease-renewal-interval-in-seconds: 10
-#    lease-expiration-duration-in-seconds: 30
     instance-id: "${spring.application.name}:${random.value}"
 
 spring:
   application:
-    name: main-service
+    name: comment-service
   config:
     import: "configserver:"
   cloud:

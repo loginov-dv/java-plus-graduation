@@ -1,12 +1,9 @@
-package ru.practicum.ewm.model.comment;
+package ru.practicum.core.comment.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import ru.practicum.ewm.model.event.Event;
-import ru.practicum.ewm.model.user.User;
 
 import java.time.LocalDateTime;
 
@@ -23,15 +20,11 @@ public class Comment {
     @Column(name = "text")
     private String text;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @ToString.Exclude
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "user_id")
+    private Long user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @ToString.Exclude
-    @JoinColumn(name = "event_id")
-    private Event event;
+    @Column(name = "event_id")
+    private Long event;
 
     @Column(name = "created_on")
     private LocalDateTime createdOn = LocalDateTime.now();

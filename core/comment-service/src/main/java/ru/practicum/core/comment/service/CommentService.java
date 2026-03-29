@@ -1,9 +1,10 @@
-package ru.practicum.ewm.service.comment;
+package ru.practicum.core.comment.service;
 
-import ru.practicum.ewm.dto.comment.CommentDto;
-import ru.practicum.ewm.dto.comment.CommentParam;
+import ru.practicum.core.comment.dto.CommentDto;
+import ru.practicum.core.comment.dto.CommentParam;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CommentService {
 
@@ -16,4 +17,8 @@ public interface CommentService {
     void deleteByAdmin(Long eventId, Long commentId);
 
     List<CommentDto> findAllByEventId(CommentParam commentParam);
+
+    Map<Long, Long> countByEvents(List<Long> eventIds);
+
+    Long countByEvent(Long eventId);
 }

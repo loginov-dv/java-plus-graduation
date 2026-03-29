@@ -1,23 +1,24 @@
-package ru.practicum.ewm.mapper;
+package ru.practicum.core.comment.mapper;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import ru.practicum.ewm.dto.comment.CommentDto;
-import ru.practicum.ewm.dto.comment.UpdateCommentRequest;
-import ru.practicum.ewm.model.comment.Comment;
-import ru.practicum.ewm.model.event.Event;
-import ru.practicum.ewm.model.user.User;
+
+import ru.practicum.core.comment.dto.CommentDto;
+import ru.practicum.core.comment.dto.UpdateCommentRequest;
+import ru.practicum.core.comment.model.Comment;
+import ru.practicum.core.common.dto.event.EventFullDto;
+import ru.practicum.core.common.dto.user.UserDto;
 
 import java.time.LocalDateTime;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CommentMapper {
-    public static Comment toNewComment(User user, Event event, CommentDto commentDto) {
+    public static Comment toNewComment(UserDto user, EventFullDto event, CommentDto commentDto) {
         Comment comment = new Comment();
 
         comment.setText(commentDto.getText());
-        comment.setUser(user);
-        comment.setEvent(event);
+        comment.setUser(user.getId());
+        comment.setEvent(event.getId());
 
         return comment;
     }
@@ -27,8 +28,8 @@ public final class CommentMapper {
 
         commentDto.setId(comment.getId());
         commentDto.setText(comment.getText());
-        commentDto.setUserId(comment.getUser().getId());
-        commentDto.setEventId(comment.getEvent().getId());
+        commentDto.setUserId(comment.getUser());
+        commentDto.setEventId(comment.getEvent());
         commentDto.setCreatedOn(comment.getCreatedOn());
         commentDto.setEditedOn(comment.getEditedOn());
 

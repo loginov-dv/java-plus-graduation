@@ -1,4 +1,4 @@
-package ru.practicum.ewm.controller.comment;
+package ru.practicum.core.comment.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -7,20 +7,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.dto.comment.CommentDto;
-import ru.practicum.ewm.dto.comment.CommentParam;
-import ru.practicum.ewm.dto.comment.UpdateCommentRequest;
-import ru.practicum.ewm.service.comment.CommentService;
+
+import ru.practicum.core.comment.dto.CommentDto;
+import ru.practicum.core.comment.dto.CommentParam;
+import ru.practicum.core.comment.dto.UpdateCommentRequest;
+import ru.practicum.core.comment.service.CommentService;
 
 @RestController
 @Slf4j
 @RequiredArgsConstructor
+@RequestMapping("/events/{eventId}/comments")
 @Validated
 public class PrivateCommentController {
     private static final String HEADER = "X-Ewm-User-Id";
     private final CommentService commentService;
 
-    @PostMapping("/events/{eventId}/comments")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommentDto create(@RequestHeader(HEADER) @Positive Long userId,
                              @PathVariable @Positive Long eventId,
@@ -35,7 +37,7 @@ public class PrivateCommentController {
         return commentService.create(commentParam);
     }
 
-    @PatchMapping("/events/{eventId}/comments/{commentId}")
+    @PatchMapping("/{commentId}")
     public CommentDto edit(@RequestHeader(HEADER) @Positive Long userId,
                            @PathVariable @Positive Long eventId,
                            @PathVariable @Positive Long commentId,
@@ -51,7 +53,7 @@ public class PrivateCommentController {
         return commentService.update(commentParam);
     }
 
-    @DeleteMapping("/events/{eventId}/comments/{commentId}")
+    @DeleteMapping("/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@RequestHeader(HEADER) @Positive Long userId,
                        @PathVariable @Positive Long eventId,

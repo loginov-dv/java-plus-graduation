@@ -1,4 +1,4 @@
-package ru.practicum.ewm.service.comment;
+package ru.practicum.core.comment.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,21 +7,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.ewm.dto.comment.CommentDto;
-import ru.practicum.ewm.dto.comment.CommentParam;
-import ru.practicum.ewm.event.EventRepository;
-import ru.practicum.ewm.exception.AccessViolationException;
-import ru.practicum.ewm.exception.NotFoundException;
-import ru.practicum.ewm.exception.ValidationException;
-import ru.practicum.ewm.mapper.CommentMapper;
-import ru.practicum.ewm.model.comment.Comment;
-import ru.practicum.ewm.model.event.Event;
-import ru.practicum.ewm.model.user.User;
-import ru.practicum.ewm.repository.UserRepository;
-import ru.practicum.ewm.repository.comment.CommentRepository;
+
+import ru.practicum.core.comment.dto.CommentDto;
+import ru.practicum.core.comment.dto.CommentParam;
+import ru.practicum.core.comment.service.client.EventClient;
+import ru.practicum.core.comment.service.client.UserClient;
+import ru.practicum.core.common.dto.event.EventFullDto;
+import ru.practicum.core.common.dto.user.UserDto;
+import ru.practicum.core.common.exception.AccessViolationException;
+import ru.practicum.core.common.exception.NotFoundException;
+import ru.practicum.core.common.exception.ValidationException;
+import ru.practicum.core.comment.mapper.CommentMapper;
+import ru.practicum.core.comment.model.Comment;
+import ru.practicum.core.comment.repository.CommentRepository;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -29,30 +31,20 @@ import java.util.Optional;
 @Transactional
 public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
-    private final EventRepository eventRepository;
+
+    private final UserClient userClient;
+    private final EventClient eventClient;
 
     @Override
     public CommentDto create(CommentParam commentParam) {
         log.debug("Comment create request for eventId = {} by userId = {}: {}",
                 commentParam.getEventId(), commentParam.getUserId(), commentParam.getCommentDto());
 
-        Optional<User> maybeUser = userRepository.findById(commentParam.getUserId());
+        UserDto commentator = userClient.getById(commentParam.getUserId());
+        EventFullDto eventFullDto = eventClient.getEventInner(commentParam.getEventId());
 
-        if (maybeUser.isEmpty()) {
-            log.warn("User with id = {} not found", commentParam.getUserId());
-            throw new NotFoundException(String.format("User with id = %d not found", commentParam.getUserId()));
-        }
-
-        Optional<Event> maybeEvent = eventRepository.findById(commentParam.getEventId());
-
-        if (maybeEvent.isEmpty()) {
-            log.warn("Event with id = {} not found", commentParam.getEventId());
-            throw new NotFoundException(String.format("Event with id = %d not found", commentParam.getEventId()));
-        }
-
-        Comment comment = commentRepository.save(CommentMapper.toNewComment(maybeUser.get(),
-                maybeEvent.get(), commentParam.getCommentDto()));
+        Comment comment = commentRepository.save(CommentMapper.toNewComment(commentator,
+                eventFullDto, commentParam.getCommentDto()));
 
         log.info("New comment added: {}", comment);
         return CommentMapper.toCommentDto(comment);
@@ -64,22 +56,17 @@ public class CommentServiceImpl implements CommentService {
                 commentParam.getCommentId(), commentParam.getEventId(), commentParam.getUserId(),
                 commentParam.getUpdateCommentRequest());
 
-        Optional<Comment> maybeComment = commentRepository.findById(commentParam.getCommentId());
+        Comment comment = commentRepository.findById(commentParam.getCommentId())
+                .orElseThrow(() -> new NotFoundException(String.format("Comment with id = %d not found", commentParam.getCommentId())));
 
-        if (maybeComment.isEmpty()) {
-            log.warn("Comment with id = {} not found", commentParam.getCommentId());
-            throw new NotFoundException(String.format("Comment with id = %d not found", commentParam.getCommentId()));
-        }
-
-        Comment comment = maybeComment.get();
         log.debug("Initial comment state: {}", comment);
 
-        if (!comment.getUser().getId().equals(commentParam.getUserId())) {
+        if (!comment.getUser().equals(commentParam.getUserId())) {
             log.warn("No access to edit comment");
             throw new AccessViolationException("No access to edit comment");
         }
 
-        if (!commentParam.getEventId().equals(comment.getEvent().getId())) {
+        if (!commentParam.getEventId().equals(comment.getEvent())) {
             log.warn("Comment with id = {} doesn't belong to event with id = {}",
                     commentParam.getCommentId(), commentParam.getEventId());
             throw new ValidationException(String.format("Comment with id = %d doesn't belong to event with id = %d",
@@ -98,23 +85,17 @@ public class CommentServiceImpl implements CommentService {
         log.debug("CommentId = {} delete request for eventId = {} by userId = {}",
                 commentParam.getCommentId(), commentParam.getEventId(), commentParam.getUserId());
 
-        Optional<Comment> maybeComment = commentRepository.findById(commentParam.getCommentId());
+        Comment comment = commentRepository.findById(commentParam.getCommentId())
+                .orElseThrow(() -> new NotFoundException(String.format("Comment with id = %d not found", commentParam.getCommentId())));
 
-        if (maybeComment.isEmpty()) {
-            log.warn("Comment with id = {} not found", commentParam.getCommentId());
-            throw new NotFoundException(String.format("Comment with id = %d not found", commentParam.getCommentId()));
-        }
-
-        Comment comment = maybeComment.get();
-
-        if (!commentParam.getEventId().equals(comment.getEvent().getId())) {
+        if (!commentParam.getEventId().equals(comment.getEvent())) {
             log.warn("Comment with id = {} doesn't belong to event with id = {}",
                     commentParam.getCommentId(), commentParam.getEventId());
             throw new ValidationException(String.format("Comment with id = %d doesn't belong to event with id = %d",
                     commentParam.getCommentId(), commentParam.getEventId()));
         }
 
-        if (!comment.getUser().getId().equals(commentParam.getUserId())) {
+        if (!comment.getUser().equals(commentParam.getUserId())) {
             log.warn("No access to delete comment");
             throw new AccessViolationException("No access to delete comment");
         }
@@ -127,16 +108,10 @@ public class CommentServiceImpl implements CommentService {
     public void deleteByAdmin(Long eventId, Long commentId) {
         log.debug("Comment id = {} delete request for eventId = {} by admin", commentId, eventId);
 
-        Optional<Comment> maybeComment = commentRepository.findById(commentId);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException(String.format("Comment with id = %d not found", commentId)));
 
-        if (maybeComment.isEmpty()) {
-            log.warn("Comment with id = {} not found", commentId);
-            throw new NotFoundException(String.format("Comment with id = %d not found", commentId));
-        }
-
-        Comment comment = maybeComment.get();
-
-        if (!eventId.equals(comment.getEvent().getId())) {
+        if (!eventId.equals(comment.getEvent())) {
             log.warn("Comment with id = {} doesn't belong to event with id = {}", commentId, eventId);
             throw new ValidationException(String.format("Comment with id = %d doesn't belong to event with id = %d",
                     commentId, eventId));
@@ -147,22 +122,40 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CommentDto> findAllByEventId(CommentParam commentParam) {
         log.debug("Comments request for eventId = {}", commentParam.getEventId());
 
-        if (!eventRepository.existsById(commentParam.getEventId())) {
-            log.warn("Event with id = {} not found", commentParam.getEventId());
-            throw new NotFoundException(String.format("Event with id = %d not found", commentParam.getEventId()));
-        }
+        EventFullDto eventFullDto = eventClient.getEventInner(commentParam.getEventId());
 
         int page = commentParam.getFrom() / commentParam.getSize();
         Sort sort = Sort.by("createdOn").ascending();
         Pageable pageable = PageRequest.of(page, commentParam.getSize(), sort);
-        List<Comment> comments = commentRepository.findByEventId(commentParam.getEventId(), pageable).getContent();
-        log.debug("comments.size = {}", comments.size());
+        List<Comment> comments = commentRepository.findByEvent(commentParam.getEventId(), pageable).getContent();
+        log.debug("Comments size = {}", comments.size());
 
         return comments.stream()
                 .map(CommentMapper::toCommentDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Long, Long> countByEvents(List<Long> eventIds) {
+        log.debug("Comments count for events: {}", eventIds);
+
+        return commentRepository.countByEventIdIn(eventIds).stream()
+                .collect(Collectors.toMap(
+                result -> (Long) result[0],
+                result -> (Long) result[1]
+        ));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long countByEvent(Long eventId) {
+        log.debug("Comments count for event: {}", eventId);
+
+        return commentRepository.countByEvent(eventId);
     }
 }

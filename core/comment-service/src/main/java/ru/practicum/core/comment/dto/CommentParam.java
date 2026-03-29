@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.comment;
+package ru.practicum.core.comment.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

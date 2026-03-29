@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.comment;
+package ru.practicum.core.comment.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
@@ -20,7 +20,7 @@ public class CommentDto {
     private Long eventId;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdOn;
+    private LocalDateTime createdOn; // TODO: явное присвоение в сервисе
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime editedOn;
