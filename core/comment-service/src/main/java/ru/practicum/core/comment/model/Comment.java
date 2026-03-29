@@ -27,7 +27,7 @@ public class Comment {
     private Long event;
 
     @Column(name = "created_on")
-    private LocalDateTime createdOn = LocalDateTime.now();
+    private LocalDateTime createdOn;
 
     @Column(name = "edited_on")
     private LocalDateTime editedOn = null;

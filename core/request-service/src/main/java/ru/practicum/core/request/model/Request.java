@@ -13,14 +13,13 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode // TODO: убрать
 public class Request {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "created", nullable = false)
-    private LocalDateTime created = LocalDateTime.now();
+    private LocalDateTime created;
 
     @Column(name = "event_id")
     private Long event;

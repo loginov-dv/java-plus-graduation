@@ -104,7 +104,7 @@ public class RequestServiceImpl implements RequestService {
                 .orElseThrow(() -> new NotFoundException(String.format("Request with id = %d not found", requestId)));
 
         if (!request.getRequester().equals(userId)) {
-            throw new ConflictException("User is not request owner"); // TODO: access violation
+            throw new AccessViolationException("User is not request owner");
         }
 
         request.setStatus(RequestStatus.CANCELED);
@@ -123,7 +123,7 @@ public class RequestServiceImpl implements RequestService {
         log.debug("Event: {}", eventFullDto);
 
         if (!eventFullDto.getInitiator().getId().equals(userId)) {
-            throw new ConflictException("User is not event initiator"); // TODO: access violation
+            throw new AccessViolationException("User is not event initiator");
         }
 
         return requestRepository.findByEvent(eventId).stream()
@@ -140,7 +140,7 @@ public class RequestServiceImpl implements RequestService {
         log.debug("Event: {}", eventFullDto);
 
         if (!eventFullDto.getInitiator().getId().equals(userId)) {
-            throw new ConflictException("User is not event initiator"); // TODO: access violation
+            throw new AccessViolationException("User is not event initiator");
         }
 
         List<Request> requests = requestRepository.findByIdInAndEvent(updateRequest.getRequestIds(), eventId);

@@ -21,6 +21,7 @@ import ru.practicum.core.comment.mapper.CommentMapper;
 import ru.practicum.core.comment.model.Comment;
 import ru.practicum.core.comment.repository.CommentRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,8 +44,9 @@ public class CommentServiceImpl implements CommentService {
         UserDto commentator = userClient.getById(commentParam.getUserId());
         EventFullDto eventFullDto = eventClient.getEventInner(commentParam.getEventId());
 
-        Comment comment = commentRepository.save(CommentMapper.toNewComment(commentator,
-                eventFullDto, commentParam.getCommentDto()));
+        Comment comment = CommentMapper.toNewComment(commentator, eventFullDto, commentParam.getCommentDto());
+        comment.setCreatedOn(LocalDateTime.now());
+        comment = commentRepository.save(comment);
 
         log.info("New comment added: {}", comment);
         return CommentMapper.toCommentDto(comment);

@@ -13,7 +13,6 @@ import java.util.Set;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode // TODO: убрать
 public class Compilation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

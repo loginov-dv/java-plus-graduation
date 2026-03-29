@@ -134,10 +134,14 @@ public class EventServiceImpl implements EventService {
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ValidationException("The event date must be at least 2 hours from now");
         }
-        Event savedEvent = eventRepository.save(eventMapper.toEvent(newEventDto, initiator));
 
-        return eventMapper.toFullDto(savedEvent, getRequestCount(savedEvent),
-                getViewCount(savedEvent), 0L, initiator);
+        Event event = eventMapper.toEvent(newEventDto, initiator);
+        event.setCreatedOn(LocalDateTime.now());
+        event.setState(EventState.PENDING);
+        event = eventRepository.save(event);
+
+        return eventMapper.toFullDto(event, getRequestCount(event),
+                getViewCount(event), 0L, initiator);
     }
 
     @Override

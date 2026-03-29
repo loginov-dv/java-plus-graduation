@@ -20,7 +20,7 @@ public class CommentDto {
     private Long eventId;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdOn; // TODO: явное присвоение в сервисе
+    private LocalDateTime createdOn;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime editedOn;

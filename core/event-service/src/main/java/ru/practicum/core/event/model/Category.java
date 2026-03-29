@@ -11,7 +11,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode // TODO: убрать
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

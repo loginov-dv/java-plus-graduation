@@ -48,8 +48,7 @@ public class RequestController implements RequestApiContract {
     @GetMapping("/users/{userId}/events/{eventId}/requests")
     public List<ParticipationRequestDto> checkUserEventParticipation(@PathVariable Long userId,
                                                                      @PathVariable Long eventId) {
-        // TODO: logs
-        log.info("User event participation request, userId={}, eventId={}", userId, eventId);
+        log.debug("GET /users/{}/events/{}/requests", userId, eventId);
 
         return requestService.getEventParticipants(userId, eventId);
     }
@@ -58,8 +57,8 @@ public class RequestController implements RequestApiContract {
     public EventRequestStatusUpdateResult changeStatusRequest(@PathVariable Long userId,
                                                               @PathVariable Long eventId,
                                                               @Valid @RequestBody EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest) {
-        // TODO: logs
-        log.info("Request to change the status of event participation eventId={}, user userId={}", eventId, userId);
+        log.debug("PATCH /users/{}/events/{}/requests", userId, eventId);
+        log.debug("Body: {}", eventRequestStatusUpdateRequest);
 
         return requestService.changeRequestStatus(userId,
                 eventId,

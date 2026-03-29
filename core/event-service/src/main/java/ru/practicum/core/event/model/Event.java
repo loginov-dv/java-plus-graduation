@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode // TODO: убрать
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +29,7 @@ public class Event {
     private Category category;
 
     @Column(name = "created_on")
-    private LocalDateTime createdOn = LocalDateTime.now(); // TODO: явное присвоение в сервисе
+    private LocalDateTime createdOn;
 
     @Column(name = "description", length = 7000)
     private String description;
@@ -58,7 +57,7 @@ public class Event {
 
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
-    private EventState state = EventState.PENDING; // TODO: явное присвоение в сервисе
+    private EventState state;
 
     @Column(name = "title")
     private String title;
