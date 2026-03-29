@@ -1,10 +1,11 @@
-package ru.practicum.ewm.event;
+package ru.practicum.core.common.dto.event;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
-import ru.practicum.ewm.annotation.EndAfterStart;
+
+import ru.practicum.core.common.annotation.EndAfterStart;
 
 import java.time.LocalDateTime;
 import java.util.List;

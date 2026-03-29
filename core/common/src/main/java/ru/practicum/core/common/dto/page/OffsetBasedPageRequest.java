@@ -1,4 +1,4 @@
-package ru.practicum.ewm.event;
+package ru.practicum.core.common.dto.page;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;

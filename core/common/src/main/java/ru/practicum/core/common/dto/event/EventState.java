@@ -1,4 +1,4 @@
-package ru.practicum.ewm.model.event;
+package ru.practicum.core.common.dto.event;
 
 import java.util.Optional;
 

@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.event;
+package ru.practicum.core.common.dto.event;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;

@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.category;
+package ru.practicum.core.common.dto.event;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;

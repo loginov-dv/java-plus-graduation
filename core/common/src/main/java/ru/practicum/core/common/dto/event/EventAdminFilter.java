@@ -1,4 +1,4 @@
-package ru.practicum.ewm.event;
+package ru.practicum.core.common.dto.event;
 
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;

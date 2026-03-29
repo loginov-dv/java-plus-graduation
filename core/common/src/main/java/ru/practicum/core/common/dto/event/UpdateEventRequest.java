@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.event;
+package ru.practicum.core.common.dto.event;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,11 +6,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import ru.practicum.ewm.model.category.Category;
-import ru.practicum.ewm.model.event.Event;
-import ru.practicum.ewm.model.event.EventState;
-import ru.practicum.ewm.model.event.Location;
-import ru.practicum.ewm.model.event.StateAction;
 
 import java.time.LocalDateTime;
 
@@ -82,47 +77,4 @@ public class UpdateEventRequest {
     public boolean hasEventDate() {
         return eventDate != null;
     }
-
-    public void applyTo(Event event, Category category, Location location, EventState eventState) {
-        if (hasTitle()) {
-            event.setTitle(title);
-        }
-
-        if (hasAnnotation()) {
-            event.setAnnotation(annotation);
-        }
-
-        if (hasDescription()) {
-            event.setDescription(description);
-        }
-
-        if (hasCategory()) {
-            event.setCategory(category);
-        }
-
-        if (hasLocationDto()) {
-            event.setLocation(location);
-        }
-
-        if (hasPaid()) {
-            event.setPaid(paid);
-        }
-
-        if (hasParticipantLimit()) {
-            event.setParticipantLimit(participantLimit);
-        }
-
-        if (hasRequestModeration()) {
-            event.setRequestModeration(requestModeration);
-        }
-
-        if (hasStateAction()) {
-            event.setState(eventState);
-        }
-
-        if (hasEventDate()) {
-            event.setEventDate(eventDate);
-        }
-    }
-
 }

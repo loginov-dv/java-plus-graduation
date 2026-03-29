@@ -1,4 +1,4 @@
-package ru.practicum.ewm.model.event;
+package ru.practicum.core.common.dto.event;
 
 public enum StateAction {
     SEND_TO_REVIEW,

@@ -1,13 +1,17 @@
-package ru.practicum.ewm.dto.user;
+package ru.practicum.core.common.dto.user;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class UserShortDto {
-    @NotNull
+public class UserDto {
+    @NotBlank
+    @Email
+    @Size(min = 6, max = 254)
+    private String email;
+
     private Long id;
 
     @NotBlank

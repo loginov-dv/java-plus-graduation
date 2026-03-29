@@ -1,4 +1,4 @@
-package ru.practicum.ewm.dto.event;
+package ru.practicum.core.common.dto.page;
 
 public enum EventSort {
     EVENT_DATE,

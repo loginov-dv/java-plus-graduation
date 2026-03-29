@@ -1,9 +1,8 @@
-package ru.practicum.ewm.dto.event;
+package ru.practicum.core.common.dto.page;
 
 import lombok.Data;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import ru.practicum.ewm.event.OffsetBasedPageRequest;
 
 @Data
 public class PageRequestDto {
