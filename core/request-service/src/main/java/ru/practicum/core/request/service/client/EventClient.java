@@ -2,8 +2,8 @@ package ru.practicum.core.request.service.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 
-import ru.practicum.core.common.api.EventApiContract;
-import ru.practicum.core.request.config.EventClientConfig;
+import ru.practicum.core.common.api.config.EventClientConfig;
+import ru.practicum.core.common.api.contract.EventApiContract;
 
 @FeignClient(
         name = "event-service",

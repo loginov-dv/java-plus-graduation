@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ru.practicum.client.StatsClient;
-import ru.practicum.core.common.api.EventApiContract;
+import ru.practicum.core.common.api.contract.EventApiContract;
 import ru.practicum.core.common.dto.event.EventFullDto;
 import ru.practicum.core.common.dto.event.EventPublicFilter;
 import ru.practicum.core.common.dto.event.EventShortDto;

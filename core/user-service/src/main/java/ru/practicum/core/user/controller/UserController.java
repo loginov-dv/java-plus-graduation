@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import ru.practicum.core.common.api.UserApiContract;
+import ru.practicum.core.common.api.contract.UserApiContract;
 import ru.practicum.core.common.dto.user.NewUserRequest;
 import ru.practicum.core.common.dto.user.UserDto;
 import ru.practicum.core.common.dto.user.UserShortDto;

@@ -1,4 +1,4 @@
-package ru.practicum.core.request.config;
+package ru.practicum.core.common.api.decoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;

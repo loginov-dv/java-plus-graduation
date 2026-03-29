@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import ru.practicum.core.comment.service.CommentService;
-import ru.practicum.core.common.api.CommentApiContract;
+import ru.practicum.core.common.api.contract.CommentApiContract;
 
 import java.util.List;
 import java.util.Map;

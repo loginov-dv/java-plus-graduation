@@ -1,4 +1,4 @@
-package ru.practicum.core.common.api;
+package ru.practicum.core.common.api.contract;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;

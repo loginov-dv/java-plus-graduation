@@ -2,8 +2,8 @@ package ru.practicum.core.request.service.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
 
-import ru.practicum.core.common.api.UserApiContract;
-import ru.practicum.core.request.config.UserClientConfig;
+import ru.practicum.core.common.api.config.UserClientConfig;
+import ru.practicum.core.common.api.contract.UserApiContract;
 
 @FeignClient(
         name = "user-service",

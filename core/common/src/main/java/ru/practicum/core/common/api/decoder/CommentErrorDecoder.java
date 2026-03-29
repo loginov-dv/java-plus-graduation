@@ -1,16 +1,15 @@
-package ru.practicum.core.request.config;
+package ru.practicum.core.common.api.decoder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 
 import ru.practicum.core.common.dto.ApiError;
-import ru.practicum.core.common.exception.NotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-public class EventErrorDecoder implements ErrorDecoder {
+public class CommentErrorDecoder implements ErrorDecoder {
     private final ErrorDecoder defaultDecoder = new Default();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -24,10 +23,10 @@ public class EventErrorDecoder implements ErrorDecoder {
             return new RuntimeException(ex.getMessage());
         }
 
-        return switch (response.status()) {
-            case 404 -> new NotFoundException(apiError.getErrors());
-            case 500 -> new RuntimeException("Server error occurred: " + apiError.getErrors());
-            default -> defaultDecoder.decode(methodKey, response);
-        };
+        if (response.status() == 500) {
+            return new RuntimeException("Server error occurred: " + apiError.getErrors());
+        } else {
+            return defaultDecoder.decode(methodKey, response);
+        }
     }
 }
