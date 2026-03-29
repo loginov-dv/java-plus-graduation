@@ -5,14 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.practicum.core.common.api.client.EventClient;
+import ru.practicum.core.common.api.client.UserClient;
 import ru.practicum.core.common.dto.event.EventFullDto;
 import ru.practicum.core.common.dto.request.EventRequestStatusUpdateRequest;
 import ru.practicum.core.common.dto.request.EventRequestStatusUpdateResult;
 import ru.practicum.core.common.dto.request.ParticipationRequestDto;
 import ru.practicum.core.common.dto.user.UserDto;
 import ru.practicum.core.common.exception.AccessViolationException;
-import ru.practicum.core.request.service.client.EventClient;
-import ru.practicum.core.request.service.client.UserClient;
 import ru.practicum.core.common.exception.ConflictException;
 import ru.practicum.core.common.exception.NotFoundException;
 import ru.practicum.core.common.exception.ValidationException;

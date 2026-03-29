@@ -15,11 +15,9 @@ public interface UserApiContract {
     @GetMapping("/{userId}")
     UserDto getById(@PathVariable @Positive Long userId);
 
-    // TODO: fallback
     @GetMapping("/short/{userId}")
     UserShortDto getShortById(@PathVariable @Positive Long userId);
 
-    // TODO: fallback
     @GetMapping("/short")
     List<UserShortDto> getShortByIdIn(@RequestParam List<Long> ids);
 }

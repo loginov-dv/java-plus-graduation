@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import ru.practicum.core.common.api.client.UserClient;
 import ru.practicum.core.common.dto.user.UserShortDto;
 import ru.practicum.core.event.dto.compilation.CompilationDto;
 import ru.practicum.core.event.dto.compilation.CompilationParam;
@@ -20,9 +21,8 @@ import ru.practicum.core.event.mapper.CompilationMapper;
 import ru.practicum.core.event.model.Compilation;
 import ru.practicum.core.event.model.Event;
 import ru.practicum.core.event.repository.CompilationRepository;
-import ru.practicum.core.event.service.client.CommentClient;
-import ru.practicum.core.event.service.client.RequestClient;
-import ru.practicum.core.event.service.client.UserClient;
+import ru.practicum.core.common.api.client.CommentClient;
+import ru.practicum.core.common.api.client.RequestClient;
 
 import java.util.HashSet;
 import java.util.List;

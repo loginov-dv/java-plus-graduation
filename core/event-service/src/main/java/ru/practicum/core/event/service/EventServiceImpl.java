@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import ru.practicum.client.StatsClient;
+import ru.practicum.core.common.api.client.UserClient;
 import ru.practicum.core.common.dto.event.EventAdminFilter;
 import ru.practicum.core.common.dto.event.EventFullDto;
 import ru.practicum.core.common.dto.event.EventInitiatorIdFilter;
@@ -33,9 +34,8 @@ import ru.practicum.core.event.model.Event;
 import ru.practicum.core.event.model.Location;
 import ru.practicum.core.event.repository.CategoryRepository;
 import ru.practicum.core.event.repository.EventRepository;
-import ru.practicum.core.event.service.client.CommentClient;
-import ru.practicum.core.event.service.client.RequestClient;
-import ru.practicum.core.event.service.client.UserClient;
+import ru.practicum.core.common.api.client.CommentClient;
+import ru.practicum.core.common.api.client.RequestClient;
 import ru.practicum.dto.StatsParamDto;
 import ru.practicum.dto.ViewStatsDto;
 
@@ -48,11 +48,12 @@ import java.util.stream.Collectors;
 @Service
 public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
-    private final EventMapper eventMapper;
-    @Lazy
-    private final StatsClient statsClient;
     private final CategoryRepository categoryRepository;
 
+    private final EventMapper eventMapper;
+
+    @Lazy
+    private final StatsClient statsClient;
     private final CommentClient commentClient;
     private final UserClient userClient;
     private final RequestClient requestClient;
@@ -67,7 +68,6 @@ public class EventServiceImpl implements EventService {
                 .toList();
 
         StatsParamDto statsParamDto = new StatsParamDto();
-        // Используем более узкий временной диапазон (не забыть)
         statsParamDto.setStart(LocalDateTime.now().minusHours(1));
         statsParamDto.setEnd(LocalDateTime.now().plusHours(1));
         statsParamDto.setUris(uriList);

@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ru.practicum.core.comment.dto.CommentDto;
 import ru.practicum.core.comment.dto.CommentParam;
-import ru.practicum.core.comment.service.client.EventClient;
-import ru.practicum.core.comment.service.client.UserClient;
+import ru.practicum.core.common.api.client.EventClient;
+import ru.practicum.core.common.api.client.UserClient;
 import ru.practicum.core.common.dto.event.EventFullDto;
 import ru.practicum.core.common.dto.user.UserDto;
 import ru.practicum.core.common.exception.AccessViolationException;
@@ -128,7 +128,7 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentDto> findAllByEventId(CommentParam commentParam) {
         log.debug("Comments request for eventId = {}", commentParam.getEventId());
 
-        EventFullDto eventFullDto = eventClient.getEventInner(commentParam.getEventId());
+        eventClient.getEventInner(commentParam.getEventId());
 
         int page = commentParam.getFrom() / commentParam.getSize();
         Sort sort = Sort.by("createdOn").ascending();
