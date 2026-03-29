@@ -1,9 +1,10 @@
-package ru.practicum.ewm.validator;
+package ru.practicum.core.common.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import ru.practicum.ewm.annotation.EndAfterStart;
-import ru.practicum.ewm.event.EventPublicFilter;
+
+import ru.practicum.core.common.annotation.EndAfterStart;
+import ru.practicum.core.common.dto.event.EventPublicFilter;
 
 public class EndAfterStartValidator implements ConstraintValidator<EndAfterStart, EventPublicFilter> {
 

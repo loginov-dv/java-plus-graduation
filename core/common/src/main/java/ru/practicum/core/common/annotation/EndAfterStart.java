@@ -1,8 +1,8 @@
-package ru.practicum.ewm.annotation;
+package ru.practicum.core.common.annotation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
-import ru.practicum.ewm.validator.EndAfterStartValidator;
+import ru.practicum.core.common.validator.EndAfterStartValidator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
