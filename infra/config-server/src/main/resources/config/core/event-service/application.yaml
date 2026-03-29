@@ -21,6 +21,12 @@ stats-server:
   retryBackOffPeriod: 10000
   retryMaxAttempts: 5
 
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowSize: 10
+      failureRateThreshold: 50
+
 logging:
   level:
     root: INFO

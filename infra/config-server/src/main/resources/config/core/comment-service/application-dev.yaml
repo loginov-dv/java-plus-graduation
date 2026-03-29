@@ -16,6 +16,12 @@ spring:
       format_sql: true
   sql.init.mode: always
 
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowSize: 10
+      failureRateThreshold: 50
+
 logging:
   level:
     root: INFO
