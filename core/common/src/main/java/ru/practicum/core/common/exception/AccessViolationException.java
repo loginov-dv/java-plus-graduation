@@ -1,4 +1,4 @@
-package ru.practicum.ewm.exception;
+package ru.practicum.core.common.exception;
 
 public class AccessViolationException extends RuntimeException {
     public AccessViolationException(String message) {
