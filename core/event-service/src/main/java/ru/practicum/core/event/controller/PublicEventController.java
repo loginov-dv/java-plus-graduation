@@ -54,7 +54,6 @@ public class PublicEventController implements EventApiContract {
         return eventService.publicSearchEvents(eventPublicFilter, pageRequestDto);
     }
 
-    @Override
     @GetMapping("/{eventId}")
     public EventFullDto getEvent(@PathVariable Long eventId,
                                  HttpServletRequest request) {
