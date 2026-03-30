@@ -72,7 +72,7 @@ spring:
           predicates:
             - Path=/events/**
 
-        - id: inner_event_service_rpute
+        - id: inner_event_service_route
           uri: lb://event-service
           predicates:
             - Path=/inner/{eventId}/**
