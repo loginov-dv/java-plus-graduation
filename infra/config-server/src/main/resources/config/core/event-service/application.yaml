@@ -14,6 +14,10 @@ spring:
       jdbc.time_zone: UTC
       format_sql: true
   sql.init.mode: always
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 # Stats-server custom properties
 stats-server:

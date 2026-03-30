@@ -15,12 +15,32 @@ spring:
       jdbc.time_zone: UTC
       format_sql: true
   sql.init.mode: always
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 # Stats-server custom properties
 stats-server:
   id: 'stats-server'
   retryBackOffPeriod: 10000
   retryMaxAttempts: 5
+
+feign:
+  client:
+    config:
+      event-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+        retryer: feign.Retryer.Default
+      user-service:
+        connectTimeout: 3000
+        readTimeout: 5000
+        retryer: feign.Retryer.Default
+      request-service:
+        connectTimeout: 5000
+        readTimeout: 5000
+        retryer: feign.Retryer.Default
 
 resilience4j.circuitbreaker:
   configs:

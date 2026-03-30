@@ -15,6 +15,22 @@ spring:
       jdbc.time_zone: UTC
       format_sql: true
   sql.init.mode: always
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
+feign:
+  client:
+    config:
+      event-service:
+        connectTimeout: 5000
+        readTimeout: 10000
+        retryer: feign.Retryer.Default
+      user-service:
+        connectTimeout: 3000
+        readTimeout: 5000
+        retryer: feign.Retryer.Default
 
 resilience4j.circuitbreaker:
   configs:
