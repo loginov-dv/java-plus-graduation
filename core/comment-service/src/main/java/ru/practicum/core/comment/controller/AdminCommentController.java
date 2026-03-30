@@ -40,7 +40,7 @@ public class AdminCommentController implements CommentApiContract {
 
     @Override
     @GetMapping("/admin/events/{eventId}/comments/count")
-    public Long countByEvent(@RequestParam Long eventId) {
+    public Long countByEvent(@PathVariable Long eventId) {
         log.debug("GET /admin/events/{}/comments/count", eventId);
 
         return commentService.countByEvent(eventId);
