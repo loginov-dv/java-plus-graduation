@@ -9,10 +9,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import ru.practicum.core.common.dto.ApiError;
-import ru.practicum.core.common.exception.AccessViolationException;
-import ru.practicum.core.common.exception.ConflictException;
-import ru.practicum.core.common.exception.NotFoundException;
-import ru.practicum.core.common.exception.ValidationException;
+import ru.practicum.core.common.exception.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -27,9 +24,25 @@ import java.util.stream.Collectors;
 public class ErrorHandler {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ApiError handleServiceUnavailableException(ServiceUnavailableException e) {
+        log.warn("503 {}", e.getMessage(), e);
+
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+
+        e.printStackTrace(printWriter);
+
+        return new ApiError(e.getMessage(),
+                "Requested service is unavailable",
+                HttpStatus.SERVICE_UNAVAILABLE.name(),
+                LocalDateTime.now().format(formatter));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleMethodArgumentNotValidException(final MethodArgumentNotValidException e) {
+    public ApiError handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.warn("400 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -55,7 +68,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleValidationException(final ValidationException e) {
+    public ApiError handleValidationException(ValidationException e) {
         log.warn("400 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -71,7 +84,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(AccessViolationException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ApiError handleAccessViolationException(final AccessViolationException e) {
+    public ApiError handleAccessViolationException(AccessViolationException e) {
         log.warn("403 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -87,7 +100,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiError handleNotFoundException(final NotFoundException e) {
+    public ApiError handleNotFoundException(NotFoundException e) {
         log.warn("404 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -103,7 +116,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleConflictException(final ConflictException e) {
+    public ApiError handleConflictException(ConflictException e) {
         log.warn("409 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -119,7 +132,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(org.hibernate.exception.ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleHibernateConstraintViolationException(final org.hibernate.exception.ConstraintViolationException e) {
+    public ApiError handleHibernateConstraintViolationException(org.hibernate.exception.ConstraintViolationException e) {
         log.warn("409 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -135,7 +148,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleJakartaConstraintViolationException(final jakarta.validation.ConstraintViolationException e) {
+    public ApiError handleJakartaConstraintViolationException(jakarta.validation.ConstraintViolationException e) {
         log.warn("400 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -161,7 +174,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiError handleException(final Exception e) {
+    public ApiError handleException(Exception e) {
         log.warn("500 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -177,7 +190,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleIllegalStateException(final IllegalStateException e) {
+    public ApiError handleIllegalStateException(IllegalStateException e) {
         log.warn("409 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
@@ -193,7 +206,7 @@ public class ErrorHandler {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleMissingServletRequestParameterException(final MissingServletRequestParameterException e) {
+    public ApiError handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("400 {}", e.getMessage(), e);
 
         StringWriter stringWriter = new StringWriter();
