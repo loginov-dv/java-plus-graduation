@@ -45,6 +45,7 @@ public class Aggregator {
 
     private final KafkaConsumer<Long, UserActionAvro> consumer;
     private final KafkaProducer<String, SpecificRecordBase> producer; // TODO: key
+    // TODO: offset commits
     //private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
     @Autowired
@@ -59,6 +60,7 @@ public class Aggregator {
         Properties consumerConfig = new Properties();
         Properties producerConfig = new Properties();
 
+        // TODO: methods
         consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaConfig.getConsumer().getClientId());
         consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaConfig.getConsumer().getGroupId());
         consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
@@ -67,7 +69,7 @@ public class Aggregator {
         //consumerConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 
         producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
-        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class); // TODO: type
+        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GeneralAvroSerializer.class);
 
         consumer = new KafkaConsumer<>(consumerConfig);
@@ -94,221 +96,8 @@ public class Aggregator {
                     UserActionAvro userAction = consumerRecord.value();
                     log.debug("Received user action: {}", userAction);
 
-                    Long user = (long) userAction.getUserId();
-                    Long event = (long) userAction.getEventId();
-                    Double weight = actionWeights.get(userAction.getActionType());
-
-                    // вектор весов пользователей для мероприятия
-                    Map<Long, Double> userMaxWeightsVector = userMaxWeightsMatrix.get(event);
-
-                    if (userMaxWeightsVector == null) {
-                        log.debug("There are no user interactions with event ({})", event);
-                        log.debug("User max weights vector for event ({}) was null", event);
-                        log.debug("Creating new vector...");
-
-                        userMaxWeightsVector = new HashMap<>();
-                        userMaxWeightsVector.put(user, weight);
-                        log.debug("New user max weights vector for event ({}): {}", event, userMaxWeightsVector);
-                        userMaxWeightsMatrix.put(event, userMaxWeightsVector);
-
-                        events.add(event);
-
-                        // сразу определим знаменатель
-                        log.debug("As it's new event, sum of user weights equals weight ({})", weight);
-                        log.debug("Sum of user weights for event ({}): {}", event, weight);
-                        sumOfUserWeightsMap.put(event, weight);
-
-                        // создаем новый пустой вектор в числителе и кладем в матрицу
-                        sumOfMinWeightsMatrix.put(event, new HashMap<>());
-                        log.debug("Created new empty vector for sum of min weights of event ({})", event);
-
-                        // проходимся по матрице числителя?
-                        for (Long otherEvent : events) {
-                            if (event.equals(otherEvent)) {
-                                continue;
-                            }
-
-                            log.debug("----- sumOfMinWeightsMatrix: {}", sumOfMinWeightsMatrix);
-                            log.debug("----- userMaxWeightsMatrix: {}", userMaxWeightsMatrix);
-
-                            log.debug("Calculating similarity for other event ({})", otherEvent);
-
-                            // пользователь не взаимодействовал с другим мероприятием
-                            // числитель равен нулю
-                            /*if (userMaxWeightsMatrix.get(otherEvent).get(user) == null) {
-                                continue;
-                            }*/
-
-                            Map<Long, Double> otherEventUserMaxWeightsVector = userMaxWeightsMatrix.get(otherEvent);
-                            log.debug("Other event ({}) user max weights vector: {}", otherEvent, otherEventUserMaxWeightsVector);
-
-                            HashSet<Long> userSet = new HashSet<>();
-                            userSet.add(user);
-                            userSet.addAll(otherEventUserMaxWeightsVector.keySet());
-                            log.debug("Users set: {}", userSet);
-
-                            double nominator = 0.0;
-
-                            for (var us : userSet) {
-                                nominator += Math.min(userMaxWeightsVector.getOrDefault(us, 0.0),
-                                        otherEventUserMaxWeightsVector.getOrDefault(us, 0.0));
-                            }
-
-                            // не похожи
-                            /*if (nominator == 0.0) {
-                                continue;
-                            }*/
-
-                            log.debug("(nominator) Sum of min weights with other event ({}): {}", otherEvent, nominator);
-
-                            // тут
-                            //sumOfMinWeightsMatrix.get(event).put(otherEvent, nominator);
-                            put(event, otherEvent, nominator);
-                            // тут
-
-                            log.debug("(denominator part) Sum of weights for event ({}): {}", event, weight);
-
-                            Double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
-                            log.debug("(denominator part) Sum of weights for other event ({}): {}", otherEvent, otherEventSumOfWeights);
-
-                            if (otherEventSumOfWeights.equals(0.0)) {
-                                log.debug("Can not calculate similarity");
-                                continue;
-                            }
-
-                            Double denominator = Math.sqrt(weight) * Math.sqrt(sumOfUserWeightsMap.get(otherEvent));
-
-                            Double similarity = nominator / denominator;
-
-                            log.debug("Similarity score between event ({}) and other event ({}): {}", event, otherEvent, similarity);
-
-                            if (!similarity.equals(0.0)) {
-                                EventSimilarityAvro eventSimilarityAvro = EventSimilarityAvro.newBuilder()
-                                        .setEventA((int)Math.min(event, otherEvent)) // TODO: type
-                                        .setEventB((int)Math.max(event, otherEvent))
-                                        .setScore(similarity)
-                                        .setTimestamp(Instant.now())
-                                        .build();
-
-                                eventSimilarities.add(eventSimilarityAvro);
-                            } else {
-                                log.debug("Similarity score was zero");
-                            }
-                        }
-                    } else {
-                        log.debug("There are existing user interactions with event ({})", event);
-                        Double oldWeight = userMaxWeightsVector.getOrDefault(user, 0.0);
-
-                        if (oldWeight.equals(0.0)) {
-                            log.debug("Old weight was 0");
-                        }
-
-                        log.debug("----- sumOfMinWeightsMatrix: {}", sumOfMinWeightsMatrix);
-                        log.debug("----- userMaxWeightsMatrix: {}", userMaxWeightsMatrix);
-
-                        // знаменатель
-                        Double anotherGodDamnSum = sumOfUserWeightsMap.get(event);
-                        log.debug("Old sum of weights for event ({}): {}", event, anotherGodDamnSum);
-                        Double delta = weight - oldWeight;
-
-                        // тут ошибка была
-                        Double newAnotherGodDamnSum = anotherGodDamnSum;
-                        if (delta > 0) {
-                            newAnotherGodDamnSum += delta;
-                        }
-                        //Double newAnotherGodDamnSum = anotherGodDamnSum + weight - oldWeight;
-                        // тут ошибка была
-
-                        // тут добавил
-                        log.debug("New sum of weights for event ({}): {}", event, newAnotherGodDamnSum);
-                        sumOfUserWeightsMap.put(event, newAnotherGodDamnSum);
-                        // тут добавил
-
-                        // TODO: separate - null and equals
-
-                        if (weight > oldWeight) {
-                            log.debug("Received weight greater than old weight");
-                            userMaxWeightsVector.put(user, weight);
-
-                            log.debug("Recalculating similarity score");
-
-                            // проходимся по матрице числителя?
-                            for (Long otherEvent : events) {
-                                if (event.equals(otherEvent)) {
-                                    continue;
-                                }
-
-                                log.debug("Calculating similarity for other event ({})", otherEvent);
-
-                                // и тут
-                                if (userMaxWeightsMatrix.get(otherEvent).get(user) == null) {
-                                    log.debug("User ({}) didn't interact with other event ({}). No need to calculate", user, otherEvent);
-                                    continue;
-                                }
-                                // и тут
-
-                                // тут
-                                //Double oldSumOfMinWeights = sumOfMinWeightsMatrix.get(event).getOrDefault(otherEvent, 0.0);
-                                Double oldSumOfMinWeights = get(event, otherEvent);
-                                // тут
-                                log.debug("(nominator) Old sum of min weights with other event ({}): {}", otherEvent, oldSumOfMinWeights);
-
-                                // TODO: skip?
-
-                                Double userWeightForAnotherEvent = userMaxWeightsMatrix.get(otherEvent).getOrDefault(user, 0.0);
-                                log.debug("Other event ({}) max user ({}) weight: {}", otherEvent, user, userWeightForAnotherEvent);
-
-                                // тут слегка поменял
-                                Double oldMinWeight = Math.min(oldWeight, userWeightForAnotherEvent);
-                                Double newMinWeight = Math.min(weight, userWeightForAnotherEvent);
-                                Double deltainner = newMinWeight - oldMinWeight;
-                                log.debug("Delta: {}", deltainner);
-
-                                Double newSumOfMinWeights = oldSumOfMinWeights + deltainner;
-                                // тут слегка поменял
-                                log.debug("(nominator) New sum of min weights with other event ({}): {}", otherEvent, newSumOfMinWeights);
-
-                                // тут
-                                //sumOfMinWeightsMatrix.get(event).put(otherEvent, newSumOfMinWeights);
-                                put(event, otherEvent, newSumOfMinWeights);
-                                // тут
-
-                                // знаменатель
-
-
-                                // проверка?
-                                // вот тут убрал
-                                //sumOfUserWeightsMap.put(event, newAnotherGodDamnSum);
-
-                                log.debug("(denominator part) Sum of weights for event ({}): {}", event, newAnotherGodDamnSum);
-                                Double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
-                                log.debug("(deniminator part) Sum of weights for other event ({}): {}", otherEvent, otherEventSumOfWeights);
-
-                                if (otherEventSumOfWeights.equals(0.0)) {
-                                    log.debug("Can not calculate similarity");
-                                    continue;
-                                }
-
-                                Double similarity = newSumOfMinWeights / (Math.sqrt(newAnotherGodDamnSum) * Math.sqrt(otherEventSumOfWeights));
-                                log.debug("Similarity score between event ({}) and other event ({}): {}", event, otherEvent, similarity);
-
-                                if (!similarity.equals(0.0)) {
-                                    EventSimilarityAvro eventSimilarityAvro = EventSimilarityAvro.newBuilder()
-                                            .setEventA((int)Math.min(event, otherEvent)) // TODO: type
-                                            .setEventB((int)Math.max(event, otherEvent))
-                                            .setScore(similarity)
-                                            .setTimestamp(Instant.now())
-                                            .build();
-
-                                    eventSimilarities.add(eventSimilarityAvro);
-                                } else {
-                                    log.debug("Similarity score was zero");
-                                }
-                            }
-                        } else {
-                            log.debug("Received weight equals old weight, no need to recalculate");
-                        }
-                    }
+                    List<EventSimilarityAvro> similarities = calculateSimilarities(userAction);
+                    eventSimilarities.addAll(similarities);
                 }
 
                 if (!eventSimilarities.isEmpty()) {
@@ -347,6 +136,195 @@ public class Aggregator {
         }
     }
 
+    private List<EventSimilarityAvro> calculateSimilarities(UserActionAvro userAction) {
+        Long user = userAction.getUserId();
+        Long event = userAction.getEventId();
+        Double weight = actionWeights.get(userAction.getActionType());
+
+        // вектор весов пользователей для мероприятия
+        Map<Long, Double> userMaxWeightsVector = userMaxWeightsMatrix.get(event);
+
+        if (userMaxWeightsVector == null) {
+            return handleNewEvent(event, user, weight);
+        } else {
+            return handleExistingEvent(event, userMaxWeightsVector, user, weight);
+        }
+    }
+
+    private List<EventSimilarityAvro> handleNewEvent(Long event, Long user, Double weight) {
+        List<EventSimilarityAvro> eventSimilarities = new ArrayList<>();
+
+        Map<Long, Double> userMaxWeightsVector;
+        log.debug("There are no user interactions with event ({})", event);
+        log.debug("User max weights vector for event ({}) was null", event);
+        log.debug("Creating new vector...");
+
+        userMaxWeightsVector = new HashMap<>();
+        userMaxWeightsVector.put(user, weight);
+        log.debug("New user max weights vector for event ({}): {}", event, userMaxWeightsVector);
+        userMaxWeightsMatrix.put(event, userMaxWeightsVector);
+
+        events.add(event);
+
+        // сразу определим знаменатель
+        log.debug("As it's new event, sum of user weights equals weight ({})", weight);
+        log.debug("Sum of user weights for event ({}): {}", event, weight);
+        sumOfUserWeightsMap.put(event, weight);
+
+        // создаем новый пустой вектор в числителе и кладем в матрицу
+        sumOfMinWeightsMatrix.put(event, new HashMap<>());
+        log.debug("Created new empty vector for sum of min weights of event ({})", event);
+
+        // проходимся по матрице числителя?
+        for (Long otherEvent : events) {
+            if (event.equals(otherEvent)) {
+                continue;
+            }
+
+            log.debug("Calculating similarity for other event ({})", otherEvent);
+
+            Map<Long, Double> otherEventUserMaxWeightsVector = userMaxWeightsMatrix.get(otherEvent);
+            log.debug("Other event ({}) user max weights vector: {}", otherEvent, otherEventUserMaxWeightsVector);
+
+            HashSet<Long> userSet = new HashSet<>();
+            userSet.add(user);
+            userSet.addAll(otherEventUserMaxWeightsVector.keySet());
+            log.debug("Users set: {}", userSet);
+
+            double nominator = 0.0;
+
+            for (var us : userSet) {
+                nominator += Math.min(userMaxWeightsVector.getOrDefault(us, 0.0),
+                        otherEventUserMaxWeightsVector.getOrDefault(us, 0.0));
+            }
+
+            log.debug("(nominator) Sum of min weights with other event ({}): {}", otherEvent, nominator);
+            put(event, otherEvent, nominator);
+
+            log.debug("(denominator part) Sum of weights for event ({}): {}", event, weight);
+
+            Double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
+            log.debug("(denominator part) Sum of weights for other event ({}): {}", otherEvent, otherEventSumOfWeights);
+
+            if (otherEventSumOfWeights.equals(0.0)) {
+                log.debug("Can not calculate similarity");
+                continue;
+            }
+
+            Double denominator = Math.sqrt(weight) * Math.sqrt(sumOfUserWeightsMap.get(otherEvent));
+
+            Double similarity = nominator / denominator;
+
+            log.debug("Similarity score between event ({}) and other event ({}): {}", event, otherEvent, similarity);
+
+            if (!similarity.equals(0.0)) {
+                EventSimilarityAvro eventSimilarityAvro = getEventSimilarityAvro(event, otherEvent, similarity);
+
+                eventSimilarities.add(eventSimilarityAvro);
+            } else {
+                log.debug("Similarity score was zero");
+            }
+        }
+
+        return eventSimilarities;
+    }
+
+    private List<EventSimilarityAvro> handleExistingEvent(Long event, Map<Long, Double> userMaxWeightsVector, Long user, Double weight) {
+        List<EventSimilarityAvro> eventSimilarities = new ArrayList<>();
+
+        log.debug("There are existing user interactions with event ({})", event);
+        Double oldWeight = userMaxWeightsVector.getOrDefault(user, 0.0);
+
+        if (oldWeight.equals(0.0)) {
+            log.debug("Old weight was 0");
+        }
+
+        // знаменатель
+        Double oldSumOfUserWeights = sumOfUserWeightsMap.get(event);
+        log.debug("Old sum of weights for event ({}): {}", event, oldSumOfUserWeights);
+        Double delta = weight - oldWeight;
+
+        Double newSumOfUserWeights = oldSumOfUserWeights;
+        if (delta > 0) {
+            newSumOfUserWeights += delta;
+        }
+
+        log.debug("New sum of weights for event ({}): {}", event, newSumOfUserWeights);
+        sumOfUserWeightsMap.put(event, newSumOfUserWeights);
+
+        if (weight <= oldWeight) {
+            log.debug("Received weight equals old weight, no need to recalculate");
+            return eventSimilarities;
+        }
+
+        log.debug("Received weight greater than old weight");
+        userMaxWeightsVector.put(user, weight);
+
+        log.debug("Recalculating similarity score");
+
+        // проходимся по матрице числителя?
+        for (Long otherEvent : events) {
+            if (event.equals(otherEvent)) {
+                continue;
+            }
+
+            log.debug("Calculating similarity for other event ({})", otherEvent);
+
+            if (userMaxWeightsMatrix.get(otherEvent).get(user) == null) {
+                log.debug("User ({}) didn't interact with other event ({}). No need to calculate", user, otherEvent);
+                continue;
+            }
+
+            Double oldSumOfMinWeights = get(event, otherEvent);
+            log.debug("(nominator) Old sum of min weights with other event ({}): {}", otherEvent, oldSumOfMinWeights);
+
+            Double userWeightForAnotherEvent = userMaxWeightsMatrix.get(otherEvent).getOrDefault(user, 0.0);
+            log.debug("Other event ({}) max user ({}) weight: {}", otherEvent, user, userWeightForAnotherEvent);
+
+            Double oldMinWeight = Math.min(oldWeight, userWeightForAnotherEvent);
+            Double newMinWeight = Math.min(weight, userWeightForAnotherEvent);
+            Double deltainner = newMinWeight - oldMinWeight;
+            log.debug("Delta: {}", deltainner);
+
+            Double newSumOfMinWeights = oldSumOfMinWeights + deltainner;
+            log.debug("(nominator) New sum of min weights with other event ({}): {}", otherEvent, newSumOfMinWeights);
+
+            put(event, otherEvent, newSumOfMinWeights);
+
+            // знаменатель
+            log.debug("(denominator part) Sum of weights for event ({}): {}", event, newSumOfUserWeights);
+            Double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
+            log.debug("(denominator part) Sum of weights for other event ({}): {}", otherEvent, otherEventSumOfWeights);
+
+            if (otherEventSumOfWeights.equals(0.0)) {
+                log.debug("Can not calculate similarity");
+                continue;
+            }
+
+            Double similarity = newSumOfMinWeights / (Math.sqrt(newSumOfUserWeights) * Math.sqrt(otherEventSumOfWeights));
+            log.debug("Similarity score between event ({}) and other event ({}): {}", event, otherEvent, similarity);
+
+            if (!similarity.equals(0.0)) {
+                EventSimilarityAvro eventSimilarityAvro = getEventSimilarityAvro(event, otherEvent, similarity);
+
+                eventSimilarities.add(eventSimilarityAvro);
+            } else {
+                log.debug("Similarity score was zero");
+            }
+        }
+
+        return eventSimilarities;
+    }
+
+    private static EventSimilarityAvro getEventSimilarityAvro(Long event, Long otherEvent, Double similarity) {
+        return EventSimilarityAvro.newBuilder()
+                .setEventA(Math.min(event, otherEvent))
+                .setEventB(Math.max(event, otherEvent))
+                .setScore(similarity)
+                .setTimestamp(Instant.now())
+                .build();
+    }
+
     private void put(long eventA, long eventB, double sum) {
         long first  = Math.min(eventA, eventB);
         long second = Math.max(eventA, eventB);
@@ -364,24 +342,4 @@ public class Aggregator {
                 .computeIfAbsent(first, e -> new HashMap<>())
                 .getOrDefault(second, 0.0);
     }
-
-    /*private double getMaxWeight() {
-
-    }
-
-    private double getMinWeight() {
-
-    }
-
-    private double getNumerator() {
-
-    }
-
-    private double getDenominator() {
-
-    }
-
-    private double getSimilarity() {
-
-    }*/
 }
