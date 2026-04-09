@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
-import ru.practicum.ewm.stats.proto.UserActionControllerGrpc;
-import ru.practicum.ewm.stats.proto.UserActionProto;
+import ru.practicum.ewm.stats.grpc.user.UserActionControllerGrpc;
+import ru.practicum.ewm.stats.proto.user.UserActionProto;
 import ru.practicum.stats.collector.config.KafkaConfig;
 import ru.practicum.stats.collector.service.Collector;
 
@@ -38,13 +38,13 @@ public class UserActionRpcController extends UserActionControllerGrpc.UserAction
 
     @Override
     public void collectUserAction(UserActionProto request, StreamObserver<Empty> responseObserver) {
-        log.debug("Receivded user action message: {}", request);
+        log.debug("Received user action message: {}", request);
 
         try {
             SpecificRecordBase specificRecordBase = toAvro(request);
 
             log.debug("Sending user action message: {}", specificRecordBase);
-            collector.send(kafkaConfig.getTopics().getUsers(), (long) request.getEventId(), specificRecordBase);
+            collector.send(kafkaConfig.getTopics().getUsers(), request.getEventId(), specificRecordBase);
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
         } catch (Exception exception) {
