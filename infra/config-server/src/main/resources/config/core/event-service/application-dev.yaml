@@ -20,12 +20,6 @@ spring:
       circuitbreaker:
         enabled: true
 
-# Stats-server custom properties
-stats-server:
-  id: 'stats-server'
-  retryBackOffPeriod: 10000
-  retryMaxAttempts: 5
-
 grpc:
   client:
     analyzer:
