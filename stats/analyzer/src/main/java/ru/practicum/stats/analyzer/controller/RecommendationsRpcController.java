@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// TODO: groups?
-// TODO: вынести в отдельный сервис логику?
 @Slf4j
 @RequiredArgsConstructor
 @GrpcService
@@ -34,21 +32,19 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
     private final UserActionService userActionService;
     private final EventSimilarityService eventSimilarityService;
 
-    // TODO: refactor
     @Override
     public void getRecommendationsForUser(UserPredictionsRequestProto request,
                                           StreamObserver<RecommendedEventProto> responseObserver) {
         log.debug("Received user predictions request: {}", request);
 
         try {
-            // все взаимодействия
-            var userActions = userActionService.getByUserId(request.getUserId());
+            // все взаимодействия пользователя
+            List<UserAction> userActions = userActionService.getByUserId(request.getUserId());
             // set с id просмотренных событий
-            var viewedEventIds = userActions.stream()
+            Set<Long> viewedEventIds = userActions.stream()
                     .map(UserAction::getEventId)
-                    .collect(Collectors.toSet()); // TODO: не гарантирует порядок
+                    .collect(Collectors.toSet());
 
-            // TODO: сразу
             if (viewedEventIds.isEmpty()) {
                 log.debug("User action history is empty, nothing to recommend");
                 responseObserver.onCompleted();
@@ -56,13 +52,13 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
             }
 
             // последние N взаимодействий
-            var lastNViewed = userActions.stream()
+            List<UserAction> lastNViewed = userActions.stream()
                     .sorted(Comparator.comparing(UserAction::getTimestamp).reversed())
                     .limit(request.getMaxResults())
                     .toList();
 
-            // N других мероприятий, похожих на последние N, с которыми юзер не взаимодействовал
-            var otherEvents = eventSimilarityService.getSimilarEvents(lastNViewed.stream()
+            // id N других мероприятий, похожих на последние N, с которыми юзер не взаимодействовал
+            List<Long> otherEvents = eventSimilarityService.getSimilarEvents(lastNViewed.stream()
                     .map(UserAction::getEventId)
                     .toList()).stream()
                     .filter(item -> !(viewedEventIds.contains(item.getEventA())
@@ -80,7 +76,7 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
                 log.debug("Processing other event: {}", otherEvent);
 
                 // мапа с мероприятиями, похожими на другое, но с которыми пользователь взаимодействовал
-                var similarities = eventSimilarityService.getSimilarEvents(otherEvent).stream()
+                Map<Long, Double> similarities = eventSimilarityService.getSimilarEvents(otherEvent).stream()
                         .filter(item -> viewedEventIds.contains(item.getEventA())
                                 || viewedEventIds.contains(item.getEventB()))
                         .collect(Collectors.toMap(sim -> viewedEventIds.contains(sim.getEventA())
@@ -89,12 +85,12 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
                 log.debug("Similar events that user interacted with and their similarity score: {}", similarities);
 
                 // мапа с оценками пользователя этих событий
-                var ratings = userActionService.getUserScoresForEvents(request.getUserId(), similarities.keySet());
+                Map<Long, Double> ratings = userActionService.getUserScoresForEvents(request.getUserId(), similarities.keySet());
                 log.debug("User ratings for similar events: {}", ratings);
 
-                Double nominator = 0.0;
+                double nominator = 0.0;
 
-                for (var entry : similarities.entrySet()) {
+                for (Map.Entry<Long, Double> entry : similarities.entrySet()) {
                     nominator += entry.getValue() * ratings.get(entry.getKey());
                 }
 
@@ -102,10 +98,10 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
 
                 Double denominator = similarities.values().stream()
                         .reduce(Double::sum)
-                        .orElseThrow(() -> new RuntimeException("Cannot calculate denominator")); // TODO: ex
+                        .orElseThrow(() -> new RuntimeException("Cannot calculate denominator"));
                 log.debug("denominator: {}", denominator);
 
-                var predictedRating = nominator / denominator;
+                double predictedRating = nominator / denominator;
                 log.debug("prediction: {}", predictedRating);
 
                 RecommendedEventProto recommendedEventProto = RecommendedEventProto.newBuilder()
@@ -141,7 +137,6 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
         log.debug("Received similar events request: {}", request);
 
         try {
-            // TODO: refactor
             List<EventSimilarity> similarities = eventSimilarityService.getSimilarEvents(request.getEventId());
             Set<Long> viewedEventIds = userActionService.getByUserId(request.getUserId()).stream()
                     .map(UserAction::getEventId)
@@ -197,7 +192,7 @@ public class RecommendationsRpcController extends RecommendationsControllerGrpc.
             Map<Long, Double> result = userActionService.getInteractionsCount(eventIds);
             log.debug("Interactions map: {}", result);
 
-            for (var entry : result.entrySet()) {
+            for (Map.Entry<Long, Double> entry : result.entrySet()) {
                 RecommendedEventProto recommendedEventProto = RecommendedEventProto.newBuilder()
                         .setEventId(entry.getKey())
                         .setScore(entry.getValue())
