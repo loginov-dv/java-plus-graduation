@@ -25,6 +25,19 @@ stats-server:
   retryBackOffPeriod: 10000
   retryMaxAttempts: 5
 
+grpc:
+  client:
+    analyzer:
+      address: 'discovery:///analyzer'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
 resilience4j.circuitbreaker:
   configs:
     default:
@@ -35,3 +48,4 @@ logging:
   level:
     root: INFO
     ru.practicum.core.event: DEBUG
+    ru.practicum.stats.client: DEBUG

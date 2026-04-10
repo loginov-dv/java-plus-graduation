@@ -20,6 +20,14 @@ spring:
       circuitbreaker:
         enabled: true
 
+grpc:
+  client:
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
 feign:
   client:
     config:
@@ -47,3 +55,4 @@ logging:
       transaction:
         interceptor: DEBUG
     ru.practicum.core.request: DEBUG
+    ru.practicum.stats.client: DEBUG
