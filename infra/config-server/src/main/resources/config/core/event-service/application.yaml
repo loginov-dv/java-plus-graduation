@@ -32,11 +32,13 @@ grpc:
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext
+      lazy: true
     collector:
       address: 'discovery:///collector'
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext
+      lazy: true
 
 resilience4j.circuitbreaker:
   configs:

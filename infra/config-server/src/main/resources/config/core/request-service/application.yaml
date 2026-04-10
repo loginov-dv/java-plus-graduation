@@ -26,6 +26,7 @@ grpc:
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext
+      lazy: true
 
 feign:
   client:
