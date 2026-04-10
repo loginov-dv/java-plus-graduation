@@ -10,7 +10,6 @@ import ru.practicum.ewm.stats.avro.ActionTypeAvro;
 
 import java.time.LocalDateTime;
 
-// TODO: props
 @Entity
 @Table(name = "user_actions")
 @Getter
