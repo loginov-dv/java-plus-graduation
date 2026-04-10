@@ -6,13 +6,10 @@ import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.rsocket.RSocketProperties;
 import org.springframework.stereotype.Component;
 
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
@@ -35,18 +32,13 @@ public class Aggregator {
     private final KafkaConfig kafkaConfig;
 
     private final Map<ActionTypeAvro, Double> actionWeights;
-    // eventId, <userId, maxWeight>
     private final Map<Long, Map<Long, Double>> userMaxWeightsMatrix = new HashMap<>();
-    // числитель - eventId, <eventId, sumOfMinWeights>
     private final Map<Long, Map<Long, Double>> sumOfMinWeightsMatrix = new HashMap<>();
-    // знаменатель - eventId, sumOfUserWeights
     private final Map<Long, Double> sumOfUserWeightsMap = new HashMap<>();
     private final Set<Long> events = new HashSet<>();
 
     private final KafkaConsumer<Long, UserActionAvro> consumer;
-    private final KafkaProducer<String, SpecificRecordBase> producer; // TODO: key
-    // TODO: offset commits
-    //private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
+    private final KafkaProducer<String, SpecificRecordBase> producer;
 
     @Autowired
     public Aggregator(KafkaConfig kafkaConfig, ActionWeightsConfig weightsConfig) {
@@ -57,27 +49,10 @@ public class Aggregator {
         actionWeights.put(ActionTypeAvro.ACTION_REGISTER, weightsConfig.getRegister());
         actionWeights.put(ActionTypeAvro.ACTION_LIKE, weightsConfig.getLike());
 
-        Properties consumerConfig = new Properties();
-        Properties producerConfig = new Properties();
-
-        // TODO: methods
-        consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaConfig.getConsumer().getClientId());
-        consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaConfig.getConsumer().getGroupId());
-        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
-        consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
-        consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserActionDeserializer.class);
-        //consumerConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-
-        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
-        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GeneralAvroSerializer.class);
-
-        consumer = new KafkaConsumer<>(consumerConfig);
-        producer = new KafkaProducer<>(producerConfig);
+        consumer = createConsumer(kafkaConfig);
+        producer = createProducer(kafkaConfig);
 
         log.info("Aggregator is using Kafka-server at url: {}", kafkaConfig.getServer());
-
-        Runtime.getRuntime().addShutdownHook(new Thread(consumer::wakeup));
     }
 
     public void start() {
@@ -111,10 +86,11 @@ public class Aggregator {
                     }
                 }
 
-                log.debug("User actions have been processed");
+                if (!records.isEmpty()) {
+                    log.debug("User actions have been processed");
+                }
             }
         } catch (WakeupException ignored) {
-
         } catch (Exception exception) {
             log.error("Error processing user action: {}", exception.getMessage());
 
@@ -125,7 +101,6 @@ public class Aggregator {
         } finally {
             try {
                 producer.flush();
-                //consumer.commitSync(currentOffsets);
             } finally {
                 log.info("Closing Aggregator Kafka-producer...");
                 producer.close();
@@ -134,6 +109,32 @@ public class Aggregator {
                 consumer.close();
             }
         }
+    }
+
+    private KafkaConsumer<Long, UserActionAvro> createConsumer(KafkaConfig kafkaConfig) {
+        Properties consumerConfig = new Properties();
+
+        consumerConfig.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaConfig.getConsumer().getClientId());
+        consumerConfig.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaConfig.getConsumer().getGroupId());
+        consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
+        consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
+        consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserActionDeserializer.class);
+
+        KafkaConsumer<Long, UserActionAvro> kafkaConsumer = new KafkaConsumer<>(consumerConfig);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(kafkaConsumer::wakeup));
+
+        return kafkaConsumer;
+    }
+
+    private KafkaProducer<String, SpecificRecordBase> createProducer(KafkaConfig kafkaConfig) {
+        Properties producerConfig = new Properties();
+
+        producerConfig.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
+        producerConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        producerConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GeneralAvroSerializer.class);
+
+        return new KafkaProducer<>(producerConfig);
     }
 
     private List<EventSimilarityAvro> calculateSimilarities(UserActionAvro userAction) {
@@ -167,7 +168,7 @@ public class Aggregator {
         events.add(event);
 
         // сразу определим знаменатель
-        log.debug("As it's new event, sum of user weights equals weight ({})", weight);
+        log.debug("New event: sum of user weights equals weight ({})", weight);
         log.debug("Sum of user weights for event ({}): {}", event, weight);
         sumOfUserWeightsMap.put(event, weight);
 
@@ -175,7 +176,6 @@ public class Aggregator {
         sumOfMinWeightsMatrix.put(event, new HashMap<>());
         log.debug("Created new empty vector for sum of min weights of event ({})", event);
 
-        // проходимся по матрице числителя?
         for (Long otherEvent : events) {
             if (event.equals(otherEvent)) {
                 continue;
@@ -186,16 +186,16 @@ public class Aggregator {
             Map<Long, Double> otherEventUserMaxWeightsVector = userMaxWeightsMatrix.get(otherEvent);
             log.debug("Other event ({}) user max weights vector: {}", otherEvent, otherEventUserMaxWeightsVector);
 
-            HashSet<Long> userSet = new HashSet<>();
-            userSet.add(user);
-            userSet.addAll(otherEventUserMaxWeightsVector.keySet());
-            log.debug("Users set: {}", userSet);
+            HashSet<Long> userIdSet = new HashSet<>();
+            userIdSet.add(user);
+            userIdSet.addAll(otherEventUserMaxWeightsVector.keySet());
+            log.debug("Users set: {}", userIdSet);
 
             double nominator = 0.0;
 
-            for (var us : userSet) {
-                nominator += Math.min(userMaxWeightsVector.getOrDefault(us, 0.0),
-                        otherEventUserMaxWeightsVector.getOrDefault(us, 0.0));
+            for (Long userId : userIdSet) {
+                nominator += Math.min(userMaxWeightsVector.getOrDefault(userId, 0.0),
+                        otherEventUserMaxWeightsVector.getOrDefault(userId, 0.0));
             }
 
             log.debug("(nominator) Sum of min weights with other event ({}): {}", otherEvent, nominator);
@@ -203,21 +203,21 @@ public class Aggregator {
 
             log.debug("(denominator part) Sum of weights for event ({}): {}", event, weight);
 
-            Double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
+            double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
             log.debug("(denominator part) Sum of weights for other event ({}): {}", otherEvent, otherEventSumOfWeights);
 
-            if (otherEventSumOfWeights.equals(0.0)) {
+            if (otherEventSumOfWeights == 0.0) {
                 log.debug("Can not calculate similarity");
                 continue;
             }
 
-            Double denominator = Math.sqrt(weight) * Math.sqrt(sumOfUserWeightsMap.get(otherEvent));
+            double denominator = Math.sqrt(weight) * Math.sqrt(sumOfUserWeightsMap.get(otherEvent));
 
-            Double similarity = nominator / denominator;
+            double similarity = nominator / denominator;
 
             log.debug("Similarity score between event ({}) and other event ({}): {}", event, otherEvent, similarity);
 
-            if (!similarity.equals(0.0)) {
+            if (similarity != 0.0) {
                 EventSimilarityAvro eventSimilarityAvro = getEventSimilarityAvro(event, otherEvent, similarity);
 
                 eventSimilarities.add(eventSimilarityAvro);
@@ -229,22 +229,23 @@ public class Aggregator {
         return eventSimilarities;
     }
 
-    private List<EventSimilarityAvro> handleExistingEvent(Long event, Map<Long, Double> userMaxWeightsVector, Long user, Double weight) {
+    private List<EventSimilarityAvro> handleExistingEvent(Long event, Map<Long, Double> userMaxWeightsVector,
+                                                          Long user, Double weight) {
         List<EventSimilarityAvro> eventSimilarities = new ArrayList<>();
 
         log.debug("There are existing user interactions with event ({})", event);
-        Double oldWeight = userMaxWeightsVector.getOrDefault(user, 0.0);
+        double oldWeight = userMaxWeightsVector.getOrDefault(user, 0.0);
 
-        if (oldWeight.equals(0.0)) {
+        if (oldWeight == 0.0) {
             log.debug("Old weight was 0");
         }
 
         // знаменатель
-        Double oldSumOfUserWeights = sumOfUserWeightsMap.get(event);
+        double oldSumOfUserWeights = sumOfUserWeightsMap.get(event);
         log.debug("Old sum of weights for event ({}): {}", event, oldSumOfUserWeights);
-        Double delta = weight - oldWeight;
+        double delta = weight - oldWeight;
 
-        Double newSumOfUserWeights = oldSumOfUserWeights;
+        double newSumOfUserWeights = oldSumOfUserWeights;
         if (delta > 0) {
             newSumOfUserWeights += delta;
         }
@@ -262,7 +263,6 @@ public class Aggregator {
 
         log.debug("Recalculating similarity score");
 
-        // проходимся по матрице числителя?
         for (Long otherEvent : events) {
             if (event.equals(otherEvent)) {
                 continue;
@@ -275,36 +275,36 @@ public class Aggregator {
                 continue;
             }
 
-            Double oldSumOfMinWeights = get(event, otherEvent);
+            double oldSumOfMinWeights = get(event, otherEvent);
             log.debug("(nominator) Old sum of min weights with other event ({}): {}", otherEvent, oldSumOfMinWeights);
 
-            Double userWeightForAnotherEvent = userMaxWeightsMatrix.get(otherEvent).getOrDefault(user, 0.0);
+            double userWeightForAnotherEvent = userMaxWeightsMatrix.get(otherEvent).getOrDefault(user, 0.0);
             log.debug("Other event ({}) max user ({}) weight: {}", otherEvent, user, userWeightForAnotherEvent);
 
-            Double oldMinWeight = Math.min(oldWeight, userWeightForAnotherEvent);
-            Double newMinWeight = Math.min(weight, userWeightForAnotherEvent);
-            Double deltainner = newMinWeight - oldMinWeight;
-            log.debug("Delta: {}", deltainner);
+            double oldMinWeight = Math.min(oldWeight, userWeightForAnotherEvent);
+            double newMinWeight = Math.min(weight, userWeightForAnotherEvent);
+            double innerDelta = newMinWeight - oldMinWeight;
+            log.debug("Delta: {}", innerDelta);
 
-            Double newSumOfMinWeights = oldSumOfMinWeights + deltainner;
+            double newSumOfMinWeights = oldSumOfMinWeights + innerDelta;
             log.debug("(nominator) New sum of min weights with other event ({}): {}", otherEvent, newSumOfMinWeights);
 
             put(event, otherEvent, newSumOfMinWeights);
 
             // знаменатель
             log.debug("(denominator part) Sum of weights for event ({}): {}", event, newSumOfUserWeights);
-            Double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
+            double otherEventSumOfWeights = sumOfUserWeightsMap.getOrDefault(otherEvent, 0.0);
             log.debug("(denominator part) Sum of weights for other event ({}): {}", otherEvent, otherEventSumOfWeights);
 
-            if (otherEventSumOfWeights.equals(0.0)) {
+            if (otherEventSumOfWeights == 0.0) {
                 log.debug("Can not calculate similarity");
                 continue;
             }
 
-            Double similarity = newSumOfMinWeights / (Math.sqrt(newSumOfUserWeights) * Math.sqrt(otherEventSumOfWeights));
+            double similarity = newSumOfMinWeights / (Math.sqrt(newSumOfUserWeights) * Math.sqrt(otherEventSumOfWeights));
             log.debug("Similarity score between event ({}) and other event ({}): {}", event, otherEvent, similarity);
 
-            if (!similarity.equals(0.0)) {
+            if (similarity != 0.0) {
                 EventSimilarityAvro eventSimilarityAvro = getEventSimilarityAvro(event, otherEvent, similarity);
 
                 eventSimilarities.add(eventSimilarityAvro);
