@@ -39,7 +39,8 @@ public class UserActionServiceImpl implements UserActionService {
     public void save(UserActionAvro userActionAvro) {
         log.debug("Request for save/update user action on event: {}", userActionAvro);
 
-        Optional<UserAction> maybeUserAction = userActionRepository.findByUserIdAndEventId(userActionAvro.getUserId(), userActionAvro.getEventId());
+        Optional<UserAction> maybeUserAction = userActionRepository.findByUserIdAndEventId(userActionAvro.getUserId(),
+                userActionAvro.getEventId());
 
         if (maybeUserAction.isEmpty()) {
             UserAction userAction = toUserAction(userActionAvro);
@@ -64,18 +65,8 @@ public class UserActionServiceImpl implements UserActionService {
     public Map<Long, Double> getInteractionsCount(List<Long> eventIds) {
         log.debug("Get interactions count for events: {}", eventIds);
 
-        // TODO: types
         List<UserAction> userActions = userActionRepository.findByEventIdIn(eventIds);
 
-        /*Map<Long, Map<Long, Double>> grouped = userActions.stream()
-                .collect(Collectors.groupingBy(
-                        UserAction::getEventId,
-                        Collectors.toMap(
-                                UserAction::getUserId,
-                                ua -> actionWeights.get(ua.getAction()),
-                                (w1, w2) -> w1 >= w2 ? w1 : w2
-                        )
-                ));*/
         Map<Long, Map<Long, Double>> grouped = userActions.stream()
                 .collect(Collectors.groupingBy(
                         UserAction::getEventId,
@@ -108,7 +99,6 @@ public class UserActionServiceImpl implements UserActionService {
     @Override
     @Transactional(readOnly = true)
     public Map<Long, Double> getUserScoresForEvents(long userId, Collection<Long> eventIds) {
-        // TODO: checks
         log.debug("Get user ({}) scores for events: {}", userId, eventIds);
 
         List<Object[]> rawResult = userActionRepository.getUserScoresForEvents(userId, eventIds);

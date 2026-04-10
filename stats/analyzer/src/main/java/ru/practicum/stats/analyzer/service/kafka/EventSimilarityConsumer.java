@@ -6,7 +6,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
-import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +13,6 @@ import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 import ru.practicum.stats.analyzer.config.KafkaConfig;
 import ru.practicum.stats.analyzer.service.database.EventSimilarityService;
 import serialization.avro.EventSimilarityDeserializer;
-import serialization.avro.UserActionDeserializer;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -75,7 +73,6 @@ public class EventSimilarityConsumer {
         consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
         consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, EventSimilarityDeserializer.class);
-        //consumerConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"); // TODO: commit offsets
 
         KafkaConsumer<String, EventSimilarityAvro> kafkaConsumer = new KafkaConsumer<>(consumerConfig);
         log.info("Analyzer event similarity consumer is using Kafka-server at url: {}", kafkaConfig.getServer());

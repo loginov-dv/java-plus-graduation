@@ -29,9 +29,6 @@ public class UserActionConsumer implements Runnable {
 
     private final UserActionService userActionService;
 
-    // TODO: offset commits
-    //private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
-
     @Autowired
     public UserActionConsumer(KafkaConfig kafkaConfig, UserActionService userActionService) {
         this.kafkaConfig = kafkaConfig;
@@ -80,7 +77,6 @@ public class UserActionConsumer implements Runnable {
         consumerConfig.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getServer());
         consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
         consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, UserActionDeserializer.class);
-        //consumerConfig.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"); // TODO: commit offsets
 
         KafkaConsumer<Long, UserActionAvro> kafkaConsumer = new KafkaConsumer<>(consumerConfig);
         log.info("Analyzer user action consumer is using Kafka-server at url: {}", kafkaConfig.getServer());

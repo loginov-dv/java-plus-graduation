@@ -1,8 +1,8 @@
 package ru.practicum.stats.analyzer.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import org.springframework.data.jpa.repository.Query;
+
 import ru.practicum.stats.analyzer.model.UserAction;
 
 import java.util.Collection;

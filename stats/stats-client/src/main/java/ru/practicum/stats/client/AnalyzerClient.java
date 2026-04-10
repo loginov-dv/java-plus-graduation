@@ -112,7 +112,6 @@ public class AnalyzerClient {
         }
     }
 
-
     private Stream<RecommendedEventProto> asStream(Iterator<RecommendedEventProto> iterator) {
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
