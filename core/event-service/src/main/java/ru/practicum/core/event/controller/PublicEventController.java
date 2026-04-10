@@ -5,22 +5,18 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import ru.practicum.client.StatsClient;
 import ru.practicum.core.common.api.contract.EventApiContract;
 import ru.practicum.core.common.dto.event.EventFullDto;
 import ru.practicum.core.common.dto.event.EventPublicFilter;
 import ru.practicum.core.common.dto.event.EventShortDto;
 import ru.practicum.core.common.dto.page.PageRequestDto;
 import ru.practicum.core.event.service.EventService;
-import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.proto.user.ActionTypeProto;
 import ru.practicum.stats.client.CollectorClient;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -32,18 +28,8 @@ public class PublicEventController implements EventApiContract {
     private static final String HEADER = "X-EWM-USER-ID";
 
     private final EventService eventService;
-    /*@Lazy
-    private final StatsClient statsClient;*/
-    private final CollectorClient collectorClient;
 
-    /*private void saveHit(HttpServletRequest request) {
-        statsClient.hit(new EndpointHitDto(
-                "event-service",
-                request.getRequestURI(),
-                request.getRemoteAddr(),
-                LocalDateTime.now()
-        ));
-    }*/
+    private final CollectorClient collectorClient;
 
     @GetMapping
     public List<EventShortDto> getEvents(@Valid EventPublicFilter eventPublicFilter,
@@ -54,20 +40,15 @@ public class PublicEventController implements EventApiContract {
         log.debug("PageRequestDto: {}", pageRequestDto);
         log.debug("Client ip: {}", request.getRemoteAddr());
 
-        //saveHit(request);
-
         return eventService.publicSearchEvents(eventPublicFilter, pageRequestDto);
     }
 
     @GetMapping("/{eventId}")
     public EventFullDto getEvent(@RequestHeader(HEADER) @Positive Long userId,
-                                 @PathVariable Long eventId/*,
-                                 HttpServletRequest request*/) {
+                                 @PathVariable Long eventId) {
         log.debug("GET /events/{}", eventId);
-        //log.debug("Client ip: {}", request.getRemoteAddr());
         log.debug("User id: {}", userId);
 
-        //saveHit(request);
         collectorClient.collectUserAction(userId, eventId, ActionTypeProto.ACTION_VIEW);
         log.debug("User action sent: user ({}) viewed event ({})", userId, eventId);
 
@@ -91,7 +72,7 @@ public class PublicEventController implements EventApiContract {
         eventService.putLike(userId, eventId);
     }
 
-    // внутренний API без HttpServletRequest
+    // внутренний API
     @Override
     @GetMapping("/inner/{eventId}")
     public EventFullDto getEventInner(@PathVariable Long eventId) {

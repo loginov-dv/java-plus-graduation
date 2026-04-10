@@ -33,29 +33,12 @@ public interface EventMapper {
         return category;
     }
 
-    /*@Deprecated
-    @Mapping(target = "confirmedRequests", source = "requests")
-    @Mapping(target = "views", source = "views")
-    @Mapping(target = "comments", source = "comments")
-    @Mapping(target = "initiator", source = "userShortDto")
-    @Mapping(target = "id", source = "event.id")
-    EventShortDto toShortDto(Event event, Long requests, Long views, Long comments, UserShortDto userShortDto);*/
-
     @Mapping(target = "confirmedRequests", source = "requests")
     @Mapping(target = "rating", source = "rating")
     @Mapping(target = "comments", source = "comments")
     @Mapping(target = "initiator", source = "userShortDto")
     @Mapping(target = "id", source = "event.id")
     EventShortDto toShortDto(Event event, Long requests, Double rating, Long comments, UserShortDto userShortDto);
-
-    /*@Deprecated
-    @Mapping(target = "confirmedRequests", source = "requests")
-    @Mapping(target = "views", source = "views")
-    @Mapping(target = "location", source = "event.location")
-    @Mapping(target = "comments", source = "comments")
-    @Mapping(target = "initiator", source = "userDto", qualifiedByName = "toUserShortDto")
-    @Mapping(target = "id", source = "event.id")
-    EventFullDto toFullDto(Event event, Long requests, Long views, Long comments, UserDto userDto);*/
 
     @Mapping(target = "confirmedRequests", source = "requests")
     @Mapping(target = "rating", source = "rating")
@@ -64,15 +47,6 @@ public interface EventMapper {
     @Mapping(target = "initiator", source = "userDto", qualifiedByName = "toUserShortDto")
     @Mapping(target = "id", source = "event.id")
     EventFullDto toFullDto(Event event, Long requests, Double rating, Long comments, UserDto userDto);
-
-    /*@Deprecated
-    @Mapping(target = "confirmedRequests", source = "requests")
-    @Mapping(target = "views", source = "views")
-    @Mapping(target = "location", source = "event.location")
-    @Mapping(target = "comments", source = "comments")
-    @Mapping(target = "initiator", source = "userShortDto")
-    @Mapping(target = "id", source = "event.id")
-    EventFullDto toFullDto(Event event, Long requests, Long views, Long comments, UserShortDto userShortDto);*/
 
     @Mapping(target = "confirmedRequests", source = "requests")
     @Mapping(target = "rating", source = "rating")

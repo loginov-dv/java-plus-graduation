@@ -2,14 +2,12 @@ package ru.practicum.core.event.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ru.practicum.client.StatsClient;
 import ru.practicum.core.common.api.client.UserClient;
 import ru.practicum.core.common.dto.event.EventAdminFilter;
 import ru.practicum.core.common.dto.event.EventFullDto;
@@ -38,8 +36,6 @@ import ru.practicum.core.event.repository.CategoryRepository;
 import ru.practicum.core.event.repository.EventRepository;
 import ru.practicum.core.common.api.client.CommentClient;
 import ru.practicum.core.common.api.client.RequestClient;
-import ru.practicum.dto.StatsParamDto;
-import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.ewm.stats.proto.recommendation.RecommendedEventProto;
 import ru.practicum.ewm.stats.proto.user.ActionTypeProto;
 import ru.practicum.stats.client.AnalyzerClient;
@@ -61,43 +57,12 @@ public class EventServiceImpl implements EventService {
 
     private final EventMapper eventMapper;
 
-    /*@Lazy
-    private final StatsClient statsClient;*/
     private final CommentClient commentClient;
     private final UserClient userClient;
     private final RequestClient requestClient;
 
     private final AnalyzerClient analyzerClient;
     private final CollectorClient collectorClient;
-
-    /*@Deprecated
-    private Map<Long, Long> getViews(List<Event> events) {
-        if (events == null || events.isEmpty()) {
-            return Map.of();
-        }
-
-        List<String> uriList = events.stream()
-                .map(e -> "/events/" + e.getId())
-                .toList();
-
-        StatsParamDto statsParamDto = new StatsParamDto();
-        statsParamDto.setStart(LocalDateTime.now().minusHours(1));
-        statsParamDto.setEnd(LocalDateTime.now().plusHours(1));
-        statsParamDto.setUris(uriList);
-        statsParamDto.setIsUnique(true);
-
-        try {
-            List<ViewStatsDto> viewStatsDtoList = statsClient.getStats(statsParamDto);
-            return viewStatsDtoList.stream()
-                    .collect(Collectors.toMap(
-                            dto -> Long.parseLong(dto.getUri().substring(dto.getUri().lastIndexOf('/') + 1)),
-                            ViewStatsDto::getHits
-                    ));
-        } catch (Exception e) {
-            log.error("Error retrieving view statistics: {}", e.getMessage());
-            return Map.of();
-        }
-    }*/
 
     private Map<Long, Double> getRatings(List<Event> events) {
         if (events == null || events.isEmpty()) {
@@ -115,12 +80,6 @@ public class EventServiceImpl implements EventService {
             return Map.of();
         }
     }
-
-    /*@Deprecated
-    private long getViewCount(Event event) {
-        Map<Long, Long> map = getViews(List.of(event));
-        return map.getOrDefault(event.getId(), 0L);
-    }*/
 
     private double getRating(Event event) {
         Map<Long, Double> map = getRatings(List.of(event));
@@ -176,8 +135,6 @@ public class EventServiceImpl implements EventService {
         event.setState(EventState.PENDING);
         event = eventRepository.save(event);
 
-        /*return eventMapper.toFullDto(event, getRequestCount(event),
-                getViewCount(event), 0L, initiator);*/
         return eventMapper.toFullDto(event, getRequestCount(event),
                 getRating(event), 0L, initiator);
     }
@@ -197,8 +154,6 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> requestsMap = getRequests(events.getContent());
         log.debug("Requests map: {}", requestsMap);
 
-        /*Map<Long, Long> viewsMap = getViews(events.getContent());
-        log.debug("Views map: {}", viewsMap);*/
         Map<Long, Double> ratingMap = getRatings(events.getContent());
         log.debug("Rating map: {}", ratingMap);
 
@@ -206,15 +161,6 @@ public class EventServiceImpl implements EventService {
                 .map(Event::getId).toList());
         log.debug("Comments map: {}", commentsMap);
 
-        /*return events.getContent().stream()
-                .map(event -> eventMapper.toShortDto(
-                        event,
-                        requestsMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L),
-                        commentsMap.getOrDefault(event.getId(), 0L),
-                        initiator
-                ))
-                .toList();*/
         return events.getContent().stream()
                 .map(event -> eventMapper.toShortDto(
                         event,
@@ -244,8 +190,6 @@ public class EventServiceImpl implements EventService {
 
         log.debug("Found event: {}", event);
 
-        /*return eventMapper.toFullDto(event, getRequestCount(event), getViewCount(event),
-                commentClient.countByEvent(eventId), initiator);*/
         return eventMapper.toFullDto(event, getRequestCount(event), getRating(event),
                 commentClient.countByEvent(eventId), initiator);
     }
@@ -297,8 +241,6 @@ public class EventServiceImpl implements EventService {
         eventRepository.save(event);
         log.debug("New state: {}", event);
 
-        /*return eventMapper.toFullDto(event, getRequestCount(event), getViewCount(event),
-                commentClient.countByEvent(eventId), initiator);*/
         return eventMapper.toFullDto(event, getRequestCount(event), getRating(event),
                 commentClient.countByEvent(eventId), initiator);
     }
@@ -349,8 +291,6 @@ public class EventServiceImpl implements EventService {
 
         UserShortDto initiator = userClient.getShortById(event.getInitiator());
 
-        /*return eventMapper.toFullDto(event, getRequestCount(event), getViewCount(event),
-                commentClient.countByEvent(eventId), initiator);*/
         return eventMapper.toFullDto(event, getRequestCount(event), getRating(event),
                 commentClient.countByEvent(eventId), initiator);
     }
@@ -370,8 +310,6 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> requestsMap = getRequests(events);
         log.debug("Requests map: {}", requestsMap);
 
-        /*Map<Long, Long> viewsMap = getViews(events);
-        log.debug("Views map: {}", viewsMap);*/
         Map<Long, Double> ratingMap = getRatings(events);
         log.debug("Rating map: {}", ratingMap);
 
@@ -387,15 +325,6 @@ public class EventServiceImpl implements EventService {
         Map<Long, UserShortDto> eventInitiatorsMap = events.stream()
                 .collect(Collectors.toMap(Event::getId, event -> initiatorsMap.get(event.getInitiator())));
 
-        /*return events.stream()
-                .map(event -> eventMapper.toFullDto(
-                        event,
-                        requestsMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L),
-                        commentsMap.getOrDefault(event.getId(), 0L),
-                        eventInitiatorsMap.get(event.getInitiator())
-                ))
-                .toList();*/
         return events.stream()
                 .map(event -> eventMapper.toFullDto(
                         event,
@@ -430,8 +359,6 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> requestsMap = getRequests(events);
         log.debug("Requests map: {}", requestsMap);
 
-        /*Map<Long, Long> viewsMap = getViews(events);
-        log.debug("Views map: {}", viewsMap);*/
         Map<Long, Double> ratingMap = getRatings(events);
         log.debug("Rating map: {}", ratingMap);
 
@@ -452,25 +379,12 @@ public class EventServiceImpl implements EventService {
         }
 
         if (sortByViews) {
-            /*events = events.stream()
-                    .sorted(Comparator.comparingLong(
-                            e -> viewsMap.getOrDefault(e.getId(), 0L)))
-                    .toList().reversed();*/
             events = events.stream()
                     .sorted(Comparator.comparingDouble(
                             e -> ratingMap.getOrDefault(e.getId(), 0.0)))
                     .toList().reversed();
         }
 
-        /*return events.stream()
-                .map(event -> eventMapper.toShortDto(
-                        event,
-                        requestsMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L),
-                        commentsMap.getOrDefault(event.getId(), 0L),
-                        eventInitiatorsMap.get(event.getInitiator())
-                ))
-                .toList();*/
         return events.stream()
                 .map(event -> eventMapper.toShortDto(
                         event,
@@ -494,8 +408,6 @@ public class EventServiceImpl implements EventService {
 
         log.debug("Found event: {}", event);
 
-        /*return eventMapper.toFullDto(event, getRequestCount(event), getViewCount(event),
-                commentClient.countByEvent(eventId), initiator);*/
         return eventMapper.toFullDto(event, getRequestCount(event), getRating(event),
                 commentClient.countByEvent(eventId), initiator);
     }
@@ -512,8 +424,6 @@ public class EventServiceImpl implements EventService {
 
         log.debug("Found event: {}", event);
 
-        /*return eventMapper.toFullDto(event, getRequestCount(event), getViewCount(event),
-                commentClient.countByEvent(eventId), initiator);*/
         return eventMapper.toFullDto(event, getRequestCount(event), getRating(event),
                 commentClient.countByEvent(eventId), initiator);
     }
