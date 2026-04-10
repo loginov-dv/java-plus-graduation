@@ -10,6 +10,8 @@ import org.springframework.retry.support.RetryTemplate;
 
 import ru.practicum.client.StatsClient;
 import ru.practicum.client.StatsClientImpl;
+import ru.practicum.stats.client.AnalyzerClient;
+import ru.practicum.stats.client.CollectorClient;
 
 @Configuration
 public class StatsClientConfig {
@@ -35,5 +37,15 @@ public class StatsClientConfig {
                                   RetryTemplate retryTemplate,
                                   StatsServerConfig statsServerConfig) {
         return new StatsClientImpl(discoveryClient, retryTemplate, statsServerConfig.getId());
+    }
+
+    @Bean
+    public CollectorClient collectorClient() {
+        return new CollectorClient();
+    }
+
+    @Bean
+    public AnalyzerClient analyzerClient() {
+        return new AnalyzerClient();
     }
 }
