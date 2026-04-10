@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import ru.practicum.core.common.dto.request.RequestStatus;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +28,7 @@ public class Request {
     @Column(name = "requester_id")
     private Long requester;
 
-    // TODO: import
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
-    private ru.practicum.core.common.dto.request.RequestStatus status;
+    private RequestStatus status;
 }
