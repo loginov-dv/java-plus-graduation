@@ -1,4 +1,4 @@
-package ru.practicum.core.request.model;
+package ru.practicum.core.common.dto.request;
 
 import java.util.Optional;
 
