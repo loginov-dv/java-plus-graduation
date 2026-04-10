@@ -10,8 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class KafkaConfig {
     private String server;
     private Topics topics;
-    private UserConsumer userConsumer;
-    private EventConsumer eventConsumer;
+    private Consumer userConsumer;
+    private Consumer eventConsumer;
 
     @Getter
     @AllArgsConstructor
@@ -20,18 +20,9 @@ public class KafkaConfig {
         private String events;
     }
 
-    // TODO: дубли
     @Getter
     @AllArgsConstructor
-    public static class UserConsumer {
-        private String clientId;
-        private String groupId;
-        private Integer pollDurationMs;
-    }
-
-    @Getter
-    @AllArgsConstructor
-    public static class EventConsumer {
+    public static class Consumer {
         private String clientId;
         private String groupId;
         private Integer pollDurationMs;
