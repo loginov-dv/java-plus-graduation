@@ -52,6 +52,8 @@ public class UserActionServiceImpl implements UserActionService {
 
             if (actionWeights.get(userActionAvro.getActionType()) > actionWeights.get(userAction.getAction())) {
                 userAction.setAction(userActionAvro.getActionType());
+                userAction.setTimestamp(LocalDateTime.ofInstant(userActionAvro.getTimestamp(), ZoneOffset.UTC));
+
                 userAction = userActionRepository.save(userAction);
                 log.debug("Updated user action: {}", userAction);
             } else {
