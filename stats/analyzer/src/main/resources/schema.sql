@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS user_actions (
     user_id BIGINT NOT NULL,
     event_id BIGINT NOT NULL,
     action VARCHAR(10) NOT NULL,
-    timestamp TIMESTAMP WITHOUT TIME ZONE NOT NULL
+    timestamp TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 
     CONSTRAINT positive_user_id CHECK (user_id > 0),
     CONSTRAINT positive_event_id CHECK (event_id > 0),
