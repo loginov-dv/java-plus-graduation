@@ -29,8 +29,6 @@ public class PublicEventController implements EventApiContract {
 
     private final EventService eventService;
 
-    private final CollectorClient collectorClient;
-
     @GetMapping
     public List<EventShortDto> getEvents(@Valid EventPublicFilter eventPublicFilter,
                                          PageRequestDto pageRequestDto,
@@ -49,10 +47,7 @@ public class PublicEventController implements EventApiContract {
         log.debug("GET /events/{}", eventId);
         log.debug("User id: {}", userId);
 
-        collectorClient.collectUserAction(userId, eventId, ActionTypeProto.ACTION_VIEW);
-        log.debug("User action sent: user ({}) viewed event ({})", userId, eventId);
-
-        return eventService.getPublishedEvent(eventId);
+        return eventService.getPublishedEvent(userId, eventId);
     }
 
     @GetMapping("recommendations")

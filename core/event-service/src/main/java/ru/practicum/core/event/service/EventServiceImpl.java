@@ -43,6 +43,7 @@ import ru.practicum.stats.client.CollectorClient;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -331,7 +332,7 @@ public class EventServiceImpl implements EventService {
                         requestsMap.getOrDefault(event.getId(), 0L),
                         ratingMap.getOrDefault(event.getId(), 0.0),
                         commentsMap.getOrDefault(event.getId(), 0L),
-                        eventInitiatorsMap.get(event.getInitiator())
+                        eventInitiatorsMap.get(event.getId())
                 ))
                 .toList();
     }
@@ -391,15 +392,17 @@ public class EventServiceImpl implements EventService {
                         requestsMap.getOrDefault(event.getId(), 0L),
                         ratingMap.getOrDefault(event.getId(), 0.0),
                         commentsMap.getOrDefault(event.getId(), 0L),
-                        eventInitiatorsMap.get(event.getInitiator())
+                        eventInitiatorsMap.get(event.getId())
                 ))
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public EventFullDto getPublishedEvent(Long eventId) {
-        log.debug("Get published event detailed info: {}", eventId);
+    public EventFullDto getPublishedEvent(Long userId, Long eventId) {
+        log.debug("Get published event ({}) detailed info by user ({})", eventId, userId);
+
+        userClient.getShortById(userId);
 
         Event event = eventRepository.findByIdAndState(eventId, EventState.PUBLISHED)
                 .orElseThrow(() -> new NotFoundException(String.format("Event id = %s not found", eventId)));
@@ -407,6 +410,9 @@ public class EventServiceImpl implements EventService {
         UserShortDto initiator = userClient.getShortById(event.getInitiator());
 
         log.debug("Found event: {}", event);
+
+        collectorClient.collectUserAction(userId, eventId, ActionTypeProto.ACTION_VIEW);
+        log.debug("User action sent: user ({}) viewed event ({})", userId, eventId);
 
         return eventMapper.toFullDto(event, getRequestCount(event), getRating(event),
                 commentClient.countByEvent(eventId), initiator);
@@ -436,14 +442,19 @@ public class EventServiceImpl implements EventService {
         userClient.getShortById(userId);
 
         Stream<RecommendedEventProto> response = analyzerClient.getRecommendationsForUser(userId, MAX_RECOMMENDATIONS);
-        log.debug("Analyzer response: {}", response);
+        List<Long> orderedIds = response
+                .map(RecommendedEventProto::getEventId)
+                .toList();
 
-        List<Event> events = eventRepository.findAllById(response.map(RecommendedEventProto::getEventId).toList());
+        List<Event> events = eventRepository.findAllById(orderedIds);
 
         if (events.isEmpty()) {
             log.debug("Analyzer response was empty, nothing to recommend");
             return List.of();
         }
+
+        Map<Long, Event> eventsMap = events.stream()
+                .collect(Collectors.toMap(Event::getId, Function.identity()));
 
         Map<Long, Long> requestsMap = getRequests(events);
         log.debug("Requests map: {}", requestsMap);
@@ -463,13 +474,15 @@ public class EventServiceImpl implements EventService {
         Map<Long, UserShortDto> eventInitiatorsMap = events.stream()
                 .collect(Collectors.toMap(Event::getId, event -> initiatorsMap.get(event.getInitiator())));
 
-        return events.stream()
+        return orderedIds.stream()
+                .map(eventsMap::get)
+                .filter(Objects::nonNull)
                 .map(event -> eventMapper.toShortDto(
                         event,
                         requestsMap.getOrDefault(event.getId(), 0L),
                         ratingMap.getOrDefault(event.getId(), 0.0),
                         commentsMap.getOrDefault(event.getId(), 0L),
-                        eventInitiatorsMap.get(event.getInitiator())
+                        eventInitiatorsMap.get(event.getId())
                 ))
                 .toList();
     }
