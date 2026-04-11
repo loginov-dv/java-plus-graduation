@@ -10,6 +10,7 @@ import ru.practicum.stats.analyzer.model.EventSimilarity;
 import ru.practicum.stats.analyzer.repository.EventSimilarityRepository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +41,8 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
 
             if (eventSimilarityAvro.getScore() != eventSimilarity.getScore()) {
                 eventSimilarity.setScore(eventSimilarityAvro.getScore());
+                eventSimilarity.setTimestamp(LocalDateTime.ofInstant(eventSimilarityAvro.getTimestamp(), ZoneOffset.UTC));
+
                 eventSimilarity = eventSimilarityRepository.save(eventSimilarity);
                 log.debug("Updated event similarity: {}", eventSimilarity);
             } else {
@@ -79,7 +82,7 @@ public class EventSimilarityServiceImpl implements EventSimilarityService {
         eventSimilarity.setEventA(eventA);
         eventSimilarity.setEventB(eventB);
         eventSimilarity.setScore(eventSimilarityAvro.getScore());
-        eventSimilarity.setTimestamp(LocalDateTime.from(eventSimilarityAvro.getTimestamp()));
+        eventSimilarity.setTimestamp(LocalDateTime.ofInstant(eventSimilarityAvro.getTimestamp(), ZoneOffset.UTC));
 
         return eventSimilarity;
     }
